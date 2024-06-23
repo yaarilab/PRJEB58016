@@ -306,7 +306,7 @@ input:
  val mate from g_1_mate_g9_0
 
 output:
- set val(name), file("*_${method}-pass.fast*")  into g9_0_reads00
+ set val(name), file("*_${method}-pass.fast*")  into g9_0_reads0_g49_0
  set val(name), file("FS_*")  into g9_0_logFile1_g9_5
  set val(name), file("*_${method}-fail.fast*") optional true  into g9_0_reads22
  set val(name),file("out*") optional true  into g9_0_logFile33
@@ -753,6 +753,7 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 process Filter_Sequence_Length_filter_seq_quality {
 
 input:
+ set val(name),file(reads) from g9_0_reads0_g49_0
  val mate from g_1_mate_g49_0
 
 output:
