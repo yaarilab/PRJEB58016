@@ -202,16 +202,14 @@ if(mate=="pair"){
 	R1 = readArray[0].toString()
 	R2 = readArray[1].toString()
 	
-	
+	println ${R1}
+	println ${R2}
 	
 	"""
 	awk -v umi_len=$umi_length -v out1="${R1}_pair-pass.fastq" -v out2="${R2}_pair-pass.fastq" 'NR==FNR{
 	
-	  echo ${R1}
-	  echo ${R2}
-	  
+
 	  if(NR%4==1){
-		echo "hii"
 	    n=split(\$0,a,"/");
 	
 	    if(n==1) split(\$0,a," ");
