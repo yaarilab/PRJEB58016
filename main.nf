@@ -220,8 +220,8 @@ cat ${R1} ${R2} | awk '{if (NR%4==1) {split(\$0,a,"${umi_field}="); print a[2]}}
 
 python3 ${umi_cluster_script} -i pair_pass.umi -o pair_pass.umi.convert
 
-awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1] "|";} else {print}}' pair_pass.umi.convert ${R1} > ${R1}'_umi-pass.fastq'
-awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1] , b[2] "|";} else {print}}' pair_pass.umi.convert ${R2} > ${R2}'_umi-pass.fastq'
+awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1];} else {print}}' pair_pass.umi.convert ${R1} > ${R1}'_umi-pass.fastq'
+awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1] , "|",b[2] ;} else {print}}' pair_pass.umi.convert ${R2} > ${R2}'_umi-pass.fastq'
 """
 
 
