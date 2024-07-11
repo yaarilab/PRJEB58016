@@ -3,10 +3,12 @@ params.outdir = 'results'
 
 evaluate(new File("${params.projectDir}/nextflow_header.config"))
 params.metadata.metadata = "${params.projectDir}/tools.json"
+
+
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_26;g_1_mate_g_63;g_1_mate_g_16;g_1_mate_g9_7;g_1_mate_g9_5;g_1_mate_g9_0;g_1_mate_g22_14;g_1_mate_g22_12;g_1_mate_g22_10;g_1_mate_g37_9;g_1_mate_g49_0;g_1_mate_g49_11;g_1_mate_g49_7;g_1_mate_g52_8;g_1_mate_g52_1;g_1_mate_g52_0;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g38_11;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g28_12}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_16;g_1_mate_g22_14;g_1_mate_g22_12;g_1_mate_g22_10;g_1_mate_g37_9;g_1_mate_g52_8;g_1_mate_g52_1;g_1_mate_g52_0;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g38_11;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g28_12}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -78,7 +80,7 @@ input:
  set val(name),file(reads) from g_63_reads0_g38_11
 
 output:
- set val(name), file("*_primers-pass.fastq")  into g38_11_reads0_g_26
+ set val(name), file("*_primers-pass.fastq")  into g38_11_reads0_g_16
  set val(name), file("*_primers-fail.fastq") optional true  into g38_11_reads_failed11
  set val(name), file("MP_*")  into g38_11_logFile2_g38_9
  set val(name),file("out*")  into g38_11_logFile3_g61_0
@@ -184,345 +186,43 @@ if(mate=="pair"){
 }
 
 
-process PairAwk {
+process Cluster_UMI {
 
 input:
- set val(name), file(reads) from g38_11_reads0_g_26
- val mate from g_1_mate_g_26
+ set val(name),file(reads) from g38_11_reads0_g_16
+ val mate from g_1_mate_g_16
 
 output:
- set val(name), file("*pair-pass.fastq")  into g_26_reads0_g9_0
+ set val(name),file("*_umi-pass.fastq") optional true  into g_16_reads0_g52_0
 
 script:
-umi_length = params.PairAwk.umi_length
-
-if(mate=="pair"){
-	readArray = reads.toString().split(' ')	
-	
-	R1 = readArray[0].toString()
-	R2 = readArray[1].toString()
-	
-	println ${R1}
-	println ${R2}
-	
-	"""
-	awk -v umi_len=$umi_length -v out1="${R1}_pair-pass.fastq" -v out2="${R2}_pair-pass.fastq" 'NR==FNR{
-	
-
-	  if(NR%4==1){
-	    n=split(\$0,a,"/");
-	
-	    if(n==1) split(\$0,a," ");
-	
-	    NAME=a[1];
-	    nb=split(a[2],b,"|");
-	    
-	    split(b[2],c,"=");
-	    SEQORIENT[a[1]]=c[2];
-	    
-	    split(b[3],c,"=");
-	    split(c[2],e,",");
-	    PRIMER[a[1]]=e[1];
-	    
-	    split(b[4],c,"=");
-	    n=split(c[2],w,"")
-	    idx=(n-umi_len)
-	    id=1
-	    if(idx>0){
-	      id=(n+1-umi_len)
-	    }
-	    if(n<(umi_len-1)){
-	      flag_len=0
-	      UMI[a[1]]="FAKE"
-	    }
-	    else{
-	      UMI[a[1]]=substr(c[2],id,umi_len); 
-	      }
-	  }
-	  
-	  if(NR%4==2)SEQ[NAME]=\$0;
-	  if(NR%4==0)QUAL[NAME]=\$0;
-	  next;
-	}
-	
-	NR%4==1{
-	  flag=0;
-	  n=split(\$0,a,"/");
-	  if(n==1) split(\$0,a," ");
-	    NAME=a[1];
-	    nb=split(a[2],b,"|");
-	  
-	  split(b[2],c,"=");
-	    SEQORIENT2[a[1]]=c[2];
-	    
-	    split(b[3],c,"=");
-	    PRIMER2[a[1]]=c[2];
-	    
-	    if(a[1] in SEQ)
-	        flag=1;
-	}
-	flag==1{
-	  if(UMI[a[1]]!="FAKE"){
-	    if(NR%4==1){
-	        
-	       print a[1] "|SEQORIENT=" SEQORIENT[a[1]] "," SEQORIENT2[a[1]] "|PRIMER=" PRIMER[a[1]] "," PRIMER2[a[1]]  "|UMI=" UMI[a[1]] > out1;
-	       print a[1] "|SEQORIENT=" SEQORIENT[a[1]] "," SEQORIENT2[a[1]] "|PRIMER=" PRIMER[a[1]] ","  PRIMER2[a[1]]  "|UMI=" UMI[a[1]]  > out2;
-	      next;
-	    }
-	    if(NR%4==2){
-	      print SEQ[a[1]] > out1;
-	      print \$0 > out2;
-	      next;
-	    }
-	    if(NR%4==3){
-	      print "+" > out1;
-	      print \$0 > out2;
-	      next;
-	    }
-	    if(NR%4==0){
-	      print QUAL[a[1]] > out1;
-	      print \$0 > out2;
-	      next;
-	    }
-	    }
-	} ' $R1 $R2
-
-	
-	
-	"""
-}else{
-	
-	"""
-	echo -e 'PairAwk works only on pair-end reads.'
-	"""
-}
-
-
-}
-
-
-process Filter_Sequence_Quality_filter_seq_quality {
-
-input:
- set val(name),file(reads) from g_26_reads0_g9_0
- val mate from g_1_mate_g9_0
-
-output:
- set val(name), file("*_${method}-pass.fast*")  into g9_0_reads0_g49_0
- set val(name), file("FS_*")  into g9_0_logFile1_g9_5
- set val(name), file("*_${method}-fail.fast*") optional true  into g9_0_reads22
- set val(name),file("out*") optional true  into g9_0_logFile33
-
-script:
-method = params.Filter_Sequence_Quality_filter_seq_quality.method
-nproc = params.Filter_Sequence_Quality_filter_seq_quality.nproc
-q = params.Filter_Sequence_Quality_filter_seq_quality.q
-n_length = params.Filter_Sequence_Quality_filter_seq_quality.n_length
-n_missing = params.Filter_Sequence_Quality_filter_seq_quality.n_missing
-fasta = params.Filter_Sequence_Quality_filter_seq_quality.fasta
-//* @style @condition:{method="quality",q}, {method="length",n_length}, {method="missing",n_missing} @multicolumn:{method,nproc}
-
-if(method=="missing"){
-	q = ""
-	n_length = ""
-	n_missing = "-n ${n_missing}"
-}else{
-	if(method=="length"){
-		q = ""
-		n_length = "-n ${n_length}"
-		n_missing = ""
-	}else{
-		q = "-q ${q}"
-		n_length = ""
-		n_missing = ""
-	}
-}
+umi_field = params.Cluster_UMI.umi_field
+umi_cluster_script = params.Cluster_UMI.umi_cluster_script
 
 readArray = reads.toString().split(' ')	
 
-fasta = (fasta=="true") ? "--fasta" : ""
-
-if(mate=="pair"){
-	R1 = readArray[0]
-	R2 = readArray[1]
-	"""
-	FilterSeq.py ${method} -s $R1 ${q} ${n_length} ${n_missing} --nproc ${nproc} --log FS_R1_${name}.log --failed ${fasta} >> out_${R1}_FS.log
-	FilterSeq.py ${method} -s $R2 ${q} ${n_length} ${n_missing} --nproc ${nproc} --log FS_R2_${name}.log --failed ${fasta} >> out_${R1}_FS.log
-	"""
-}else{
-	R1 = readArray[0]
-	"""
-	FilterSeq.py ${method} -s $R1 ${q} ${n_length} ${n_missing} --nproc ${nproc} --log FS_${name}.log --failed ${fasta} >> out_${R1}_FS.log
-	"""
-}
+R1 = readArray[0]
+R2 = readArray[1]
 
 
-}
+
+filename_R1=file(R1).getSimpleName()
+filename_R2=file(R2).getSimpleName()
 
 
-process Filter_Sequence_Quality_parse_log_FS {
-
-input:
- set val(name), file(log_file) from g9_0_logFile1_g9_5
- val mate from g_1_mate_g9_5
-
-output:
- set val(name), file("*table.tab")  into g9_5_logFile0_g9_7, g9_5_logFile0_g9_16
-
-script:
-readArray = log_file.toString()
 
 """
-ParseLog.py -l ${readArray}  -f ID QUALITY
+#!/bin/bash
+
+cat ${R1} ${R2} | awk '{if (NR%4==1) {split(\$0,a,"${umi_field}="); print a[2]}}' > pair_pass.umi
+
+python3 ${umi_cluster_script} -i pair_pass.umi -o pair_pass.umi.convert
+
+awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1];} else {print}}' pair_pass.umi.convert ${R1} > ${R1}'_umi-pass.fastq'
+awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1] , b[2];} else {print}}' pair_pass.umi.convert ${R2} > ${R2}'_umi-pass.fastq'
 """
 
-}
 
-
-process Filter_Sequence_Quality_report_filter_Seq_Quality {
-
-input:
- val mate from g_1_mate_g9_7
- set val(name), file(log_files) from g9_5_logFile0_g9_7
-
-output:
- file "*.rmd"  into g9_7_rMarkdown0_g9_16
-
-
-shell:
-
-if(mate=="pair"){
-	readArray = log_files.toString().split(' ')	
-	R1 = readArray[0]
-	R2 = readArray[1]
-
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	plot_titles <- c("Read 1", "Read 2")
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("quality", 
-	        paste("Mean Phred quality scores for",  plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
-	              "The dotted line indicates the average quality score under which reads were removed."))
-	```
-	
-	```{r, echo=FALSE}
-	quality_log_1 <- loadLogTable(file.path(".", "!{R1}"))
-	quality_log_2 <- loadLogTable(file.path(".", "!{R2}"))
-	```
-	
-	# Quality Scores
-	
-	Quality filtering is an essential step in most sequencing workflows. pRESTO’s
-	FilterSeq tool remove reads with low mean Phred quality scores. 
-	Phred quality scores are assigned to each nucleotide base call in automated 
-	sequencer traces. The quality score (`Q`) of a base call is logarithmically 
-	related to the probability that a base call is incorrect (`P`): 
-	$Q = -10 log_{10} P$. For example, a base call with `Q=30` is incorrectly 
-	assigned 1 in 1000 times. The most commonly used approach is to remove read 
-	with average `Q` below 20.
-	
-	```{r, echo=FALSE}
-	plotFilterSeq(quality_log_1, quality_log_2, titles=plot_titles, sizing="figure")
-	```
-	
-	`r figures("quality")`
-		
-	EOF
-	
-	open OUT, ">FSQ_!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-
-}else{
-
-	readArray = log_files.toString().split(' ')
-	R1 = readArray[0]
-	
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	plot_titles <- c("Read")#params$quality_titles
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("quality", 
-	        paste("Mean Phred quality scores for",  plot_titles[1],
-	              "The dotted line indicates the average quality score under which reads were removed."))
-	```
-	
-	```{r, echo=FALSE}
-	quality_log_1 <- loadLogTable(file.path(".", "!{R1}"))
-	```
-	
-	# Quality Scores
-	
-	Quality filtering is an essential step in most sequencing workflows. pRESTO’s
-	FilterSeq tool remove reads with low mean Phred quality scores. 
-	Phred quality scores are assigned to each nucleotide base call in automated 
-	sequencer traces. The quality score (`Q`) of a base call is logarithmically 
-	related to the probability that a base call is incorrect (`P`): 
-	$Q = -10 log_{10} P$. For example, a base call with `Q=30` is incorrectly 
-	assigned 1 in 1000 times. The most commonly used approach is to remove read 
-	with average `Q` below 20.
-	
-	```{r, echo=FALSE}
-	plotFilterSeq(quality_log_1, titles=plot_titles[1], sizing="figure")
-	```
-	
-	`r figures("quality")`
-	
-	EOF
-	
-	open OUT, ">FSQ_!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-}
-}
-
-
-process Filter_Sequence_Quality_presto_render_rmarkdown {
-
-input:
- file rmk from g9_7_rMarkdown0_g9_16
- file log_file from g9_5_logFile0_g9_16
-
-output:
- file "*.html"  into g9_16_outputFileHTML00
- file "*csv" optional true  into g9_16_csvFile11
-
-"""
-
-#!/usr/bin/env Rscript 
-
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
-
-"""
 }
 
 
@@ -741,257 +441,6 @@ input:
 output:
  file "*.html"  into g38_16_outputFileHTML00
  file "*csv" optional true  into g38_16_csvFile11
-
-"""
-
-#!/usr/bin/env Rscript 
-
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
-
-"""
-}
-
-
-process Filter_Sequence_Length_filter_seq_quality {
-
-input:
- set val(name),file(reads) from g9_0_reads0_g49_0
- val mate from g_1_mate_g49_0
-
-output:
- set val(name), file("*_${method}-pass.fastq")  into g49_0_reads0_g_16
- set val(name), file("FS_*")  into g49_0_logFile1_g49_11
- set val(name), file("*_${method}-fail.fastq") optional true  into g49_0_reads22
- set val(name),file("out*") optional true  into g49_0_logFile3_g61_0
-
-script:
-method = params.Filter_Sequence_Length_filter_seq_quality.method
-nproc = params.Filter_Sequence_Length_filter_seq_quality.nproc
-q = params.Filter_Sequence_Length_filter_seq_quality.q
-n_length = params.Filter_Sequence_Length_filter_seq_quality.n_length
-n_missing = params.Filter_Sequence_Length_filter_seq_quality.n_missing
-//* @style @condition:{method="quality",q}, {method="length",n_length}, {method="missing",n_missing} @multicolumn:{method,nproc}
-
-if(method=="quality"){
-	q = "-q ${q}"
-	n_length = ""
-	n_missing = ""
-}else{
-	if(method=="length"){
-		q = ""
-		n_length = "-n ${n_length}"
-		n_missing = ""
-	}else{
-		q = ""
-		n_length = ""
-		n_missing = "-n ${n_missing}"
-	}
-}
-
-readArray = reads.toString().split(' ')	
-
-
-if(mate=="pair"){
-	R1 = readArray.grep(~/.*R1.*/)[0]
-	R2 = readArray.grep(~/.*R2.*/)[0]
-	"""
-	FilterSeq.py ${method} -s $R1 ${q} ${n_length} ${n_missing} --nproc ${nproc} --log FS_R1_${name}.log --failed >> out_${R1}_FS.log
-	FilterSeq.py ${method} -s $R2 ${q} ${n_length} ${n_missing} --nproc ${nproc} --log FS_R2_${name}.log --failed >> out_${R1}_FS.log
-	"""
-}else{
-	R1 = readArray[0]
-	"""
-	FilterSeq.py ${method} -s $R1 ${q} ${n_length} ${n_missing} --nproc ${nproc} --log FS_${name}.log --failed >> out_${R1}_FS.log
-	"""
-}
-
-
-}
-
-
-process Cluster_UMI {
-
-input:
- set val(name),file(reads) from g49_0_reads0_g_16
- val mate from g_1_mate_g_16
-
-output:
- set val(name),file("*_umi-pass.fastq") optional true  into g_16_reads0_g52_0
-
-script:
-umi_field = params.Cluster_UMI.umi_field
-umi_cluster_script = params.Cluster_UMI.umi_cluster_script
-
-readArray = reads.toString().split(' ')	
-
-R1 = readArray[0]
-R2 = readArray[1]
-
-
-
-filename_R1=file(R1).getSimpleName()
-filename_R2=file(R2).getSimpleName()
-
-
-
-"""
-#!/bin/bash
-
-cat ${R1} ${R2} | awk '{if (NR%4==1) {split(\$0,a,"${umi_field}="); print a[2]}}' > pair_pass.umi
-
-python3 ${umi_cluster_script} -i pair_pass.umi -o pair_pass.umi.convert
-
-awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1];} else {print}}' pair_pass.umi.convert ${R1} > ${R1}'_umi-pass.fastq'
-awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1] , b[2];} else {print}}' pair_pass.umi.convert ${R2} > ${R2}'_umi-pass.fastq'
-"""
-
-
-}
-
-
-process Filter_Sequence_Length_parse_log_FL {
-
-input:
- set val(name), file(log_file) from g49_0_logFile1_g49_11
- val mate from g_1_mate_g49_11
-
-output:
- set val(name), file("*.tab")  into g49_11_logFile0_g49_7
-
-script:
-readArray = log_file.toString()
-
-"""
-ParseLog.py -l ${readArray}  -f ID LENGTH
-"""
-}
-
-
-process Filter_Sequence_Length_report_filter_Seq_Lenght {
-
-input:
- set val(name), file(log_files) from g49_11_logFile0_g49_7
- val matee from g_1_mate_g49_7
-
-output:
- file "*.rmd"  into g49_7_rMarkdown0_g49_9
-
-
-shell:
-
-if(matee=="pair"){
-	readArray = log_files.toString().split(' ')	
-	R1 = readArray.grep(~/.*R1.*/)[0]
-	R2 = readArray.grep(~/.*R2.*/)[0]
-
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	plot_titles <- c("Read 1", "Read 2")
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("lenght", 
-	        paste("Minimun lenght for",  plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
-	              "The dotted line indicates the min lenght under which reads were removed."))
-	```
-	
-	```{r, echo=FALSE}
-	lenght_log_1 <- loadLogTable(file.path(".", "!{R1}"))
-	lenght_log_2 <- loadLogTable(file.path(".", "!{R2}"))
-	```
-	
-	# Lenght Scores
-	
-	Lenght filtering is an essential step in most sequencing workflows. pRESTO’s
-	FilterSeq Lenght tool remove short reads with minimun lenght. 
-	The most commonly used approach is to remove read with lenght below 35.
-	
-	```{r, echo=FALSE}
-	plotFilterSeq(lenght_log_1, lenght_log_2, titles=plot_titles, cutoff=35 , sizing="figure")
-	```
-	
-	`r figures("lenght")`
-		
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-
-}else{
-
-	readArray = log_files.toString().split(' ')
-	R1 = readArray[0]
-	
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	plot_titles <- c("Read")#params$quality_titles
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("lenght", 
-	        paste("Minimun lenght for",  plot_titles[1],
-	              "The dotted line indicates the min lenght under which reads were removed."))
-	```
-	
-	```{r, echo=FALSE}
-	lenght_log_1 <- loadLogTable(file.path(".", "!{R1}"))
-	```
-	
-	# Lenght Scores
-	
-	Lenght filtering is an essential step in most sequencing workflows. pRESTO’s
-	FilterSeq Lenght tool remove short reads with minimun lenght. 
-	The most commonly used approach is to remove read with lenght below 35.
-	
-	```{r, echo=FALSE}
-	plotFilterSeq(lenght_log_1, titles=plot_titles, cutoff=35 , sizing="figure")
-	```
-	
-	`r figures("lenght")`
-	
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-}
-}
-
-
-process Filter_Sequence_Length_render_rmarkdown {
-
-input:
- file rmk from g49_7_rMarkdown0_g49_9
-
-output:
- file "*.html"  into g49_9_outputFileHTML00
- file "*csv" optional true  into g49_9_csvFile11
 
 """
 
@@ -1950,7 +1399,6 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 process make_report_pipeline_cat_all_file {
 
 input:
- set val(name), file(log_file) from g49_0_logFile3_g61_0
  set val(name), file(log_file) from g52_0_logFile3_g61_0
  set val(name), file(log_file) from g22_10_logFile2_g61_0
  set val(name), file(log_file) from g37_9_logFile1_g61_0
@@ -2070,7 +1518,7 @@ process metadata {
 publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /.*.json$/) "metadata/$filename"}
 
 output:
- file "*.json"  into g_67_jsonFile00
+ file "*.json"  into g_69_jsonFile00
 
 script:
 metadata = params.metadata.metadata
