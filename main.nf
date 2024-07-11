@@ -8,7 +8,7 @@ params.metadata.metadata = "${params.projectDir}/tools.json"
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_16;g_1_mate_g22_14;g_1_mate_g22_12;g_1_mate_g22_10;g_1_mate_g37_9;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g28_12;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_16;g_1_mate_g22_14;g_1_mate_g22_12;g_1_mate_g22_10;g_1_mate_g37_9;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g28_12;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -83,7 +83,7 @@ output:
  set val(name), file("*_primers-pass.fast*")  into g38_11_reads0_g_16
  set val(name), file("*_primers-fail.fast*") optional true  into g38_11_reads_failed11
  set val(name), file("MP_*")  into g38_11_logFile2_g38_9
- set val(name),file("out*")  into g38_11_logFile33
+ set val(name),file("out*")  into g38_11_logFile3_g61_0
 
 script:
 method = params.Mask_Primer_MaskPrimers.method
@@ -470,10 +470,10 @@ input:
  val mate from g_1_mate_g52_0
 
 output:
- set val(name),file("*_align-pass.fastq")  into g52_0_reads0_g22_10
+ set val(name),file("*_align-pass.fastq")  into g52_0_reads0_g70_9
  set val(name), file("AS_*")  into g52_0_logFile1_g52_1
  set val(name),file("*_align-fail.fastq") optional true  into g52_0_reads_failed22
- set val(name), file("out*") optional true  into g52_0_logFile33
+ set val(name), file("out*") optional true  into g52_0_logFile3_g61_0
 
 script:
 method = params.Align_Sets_align_sets.method
@@ -565,6 +565,48 @@ if(mate=="pair"){
 
 }
 
+
+process Pair_Sequence_per_consensus_pair_seq {
+
+input:
+ set val(name),file(reads) from g52_0_reads0_g70_9
+ val mate from g_1_mate_g70_9
+
+output:
+ set val(name),file("*_pair-pass.fastq")  into g70_9_reads0_g22_10
+ set val(name),file("out*")  into g70_9_logFile1_g61_0
+
+script:
+coord = params.Pair_Sequence_per_consensus_pair_seq.coord
+act = params.Pair_Sequence_per_consensus_pair_seq.act
+copy_fields_1 = params.Pair_Sequence_per_consensus_pair_seq.copy_fields_1
+copy_fields_2 = params.Pair_Sequence_per_consensus_pair_seq.copy_fields_2
+failed = params.Pair_Sequence_per_consensus_pair_seq.failed
+nproc = params.Pair_Sequence_per_consensus_pair_seq.nproc
+
+if(mate=="pair"){
+	
+	act = (act=="none") ? "" : "--act ${act}"
+	failed = (failed=="true") ? "--failed" : "" 
+	copy_fields_1 = (copy_fields_1=="") ? "" : "--1f ${copy_fields_1}" 
+	copy_fields_2 = (copy_fields_2=="") ? "" : "--2f ${copy_fields_2}"
+	
+	readArray = reads.toString().split(' ')	
+	R1 = readArray[0]
+	R2 = readArray[1]
+	"""
+	PairSeq.py -1 ${R1} -2 ${R2} ${copy_fields_1} ${copy_fields_2} --coord ${coord} ${act} ${failed} >> out_${R1}_PS.log
+	"""
+}else{
+	
+	"""
+	echo -e 'PairSeq works only on pair-end reads.'
+	"""
+}
+
+
+}
+
 boolean isCollectionOrArray_bc(object) {    
     [Collection, Object[]].any { it.isAssignableFrom(object.getClass()) }
 }
@@ -615,7 +657,7 @@ def args_creator_bc(barcode_field, primer_field, act, copy_field, mincount, minq
 process Build_Consensus_build_consensus {
 
 input:
- set val(name),file(reads) from g52_0_reads0_g22_10
+ set val(name),file(reads) from g70_9_reads0_g22_10
  val mate from g_1_mate_g22_10
 
 output:
@@ -727,7 +769,7 @@ output:
  set val(name),file("*_assemble-pass.f*")  into g28_12_reads0_g_65
  set val(name),file("AP_*")  into g28_12_logFile1_g28_15
  set val(name),file("*_assemble-fail.f*") optional true  into g28_12_reads_failed22
- set val(name),file("out*")  into g28_12_logFile33
+ set val(name),file("out*")  into g28_12_logFile3_g61_0
 
 script:
 method = params.Assemble_pairs_assemble_pairs.method
@@ -1030,6 +1072,10 @@ process make_report_pipeline_cat_all_file {
 input:
  set val(name), file(log_file) from g22_10_logFile2_g61_0
  set val(name), file(log_file) from g37_9_logFile1_g61_0
+ set val(name), file(log_file) from g52_0_logFile3_g61_0
+ set val(name), file(log_file) from g38_11_logFile3_g61_0
+ set val(name), file(log_file) from g70_9_logFile1_g61_0
+ set val(name), file(log_file) from g28_12_logFile3_g61_0
 
 output:
  set val(name), file("all_out_file.log")  into g61_0_logFile0_g61_2, g61_0_logFile0_g61_10
