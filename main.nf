@@ -8,7 +8,7 @@ params.metadata.metadata = "${params.projectDir}/tools.json"
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_16;g_1_mate_g22_14;g_1_mate_g22_12;g_1_mate_g22_10;g_1_mate_g37_9;g_1_mate_g52_8;g_1_mate_g52_1;g_1_mate_g52_0;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g38_11;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g28_12}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_16;g_1_mate_g22_14;g_1_mate_g22_12;g_1_mate_g22_10;g_1_mate_g37_9;g_1_mate_g52_8;g_1_mate_g52_1;g_1_mate_g52_0;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g28_12;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -80,10 +80,10 @@ input:
  set val(name),file(reads) from g_63_reads0_g38_11
 
 output:
- set val(name), file("*_primers-pass.fastq")  into g38_11_reads0_g_16
- set val(name), file("*_primers-fail.fastq") optional true  into g38_11_reads_failed11
+ set val(name), file("*_primers-pass.fast*")  into g38_11_reads0_g_16
+ set val(name), file("*_primers-fail.fast*") optional true  into g38_11_reads_failed11
  set val(name), file("MP_*")  into g38_11_logFile2_g38_9
- set val(name),file("out*")  into g38_11_logFile3_g61_0
+ set val(name),file("out*")  into g38_11_logFile33
 
 script:
 method = params.Mask_Primer_MaskPrimers.method
@@ -93,6 +93,7 @@ barcode = params.Mask_Primer_MaskPrimers.barcode
 revpr = params.Mask_Primer_MaskPrimers.revpr
 mode = params.Mask_Primer_MaskPrimers.mode
 failed = params.Mask_Primer_MaskPrimers.failed
+fasta = params.Mask_Primer_MaskPrimers.fasta
 nproc = params.Mask_Primer_MaskPrimers.nproc
 maxerror = params.Mask_Primer_MaskPrimers.maxerror
 umi_length = params.Mask_Primer_MaskPrimers.umi_length
@@ -117,7 +118,7 @@ extract_length = (extract_length.collect().size==2) ? extract_length : [extract_
 maxlen = (maxlen.collect().size==2) ? maxlen : [maxlen[0],maxlen[0]]
 skiprc = (skiprc.collect().size==2) ? skiprc : [skiprc[0],skiprc[0]]
 failed = (failed=="true") ? "--failed" : ""
-
+fasta = (fasta=="true") ? "--fasta" : ""
 def args_values = [];
 [method,barcode_field,primer_field,barcode,revpr,mode,maxerror,umi_length,start,extract_length,maxlen,skiprc].transpose().each { m,bf,pf,bc,rp,md,mr,ul,s,el,ml,sk -> {
     
@@ -144,7 +145,7 @@ def args_values = [];
     pf = (pf=="") ? "" : "--pf ${pf}"
     bc = (bc=="false") ? "" : "--barcode"
     rp = (rp=="false") ? "" : "--revpr"
-    args_values.add("${m} --mode ${md} ${bf} ${pf} ${bc} ${rp} ${mr} ${s} ${el} ${ml} ${sk}")
+    args_values.add("${m} --mode ${md} ${bc} ${rp} ${mr} ${s} ${el} ${ml} ${sk} ${pf} ${bf}")
     
     
 }}
@@ -166,8 +167,9 @@ if(mate=="pair"){
 	
 	"""
 	
-	MaskPrimers.py ${args_1} -s ${R1} ${R1_primers} --log MP_R1_${name}.log  --nproc ${nproc} ${failed} >> out_${R1}_MP.log
-	MaskPrimers.py ${args_2} -s ${R2} ${R2_primers} --log MP_R2_${name}.log  --nproc ${nproc} ${failed} >> out_${R1}_MP.log
+	MaskPrimers.py ${args_1} -s ${R1} ${R1_primers} --log MP_R1_${name}.log  --nproc ${nproc} ${failed} ${fasta} 2>&1 | tee -a out_${R1}_MP.log & \
+	MaskPrimers.py ${args_2} -s ${R2} ${R2_primers} --log MP_R2_${name}.log  --nproc ${nproc} ${failed} ${fasta} 2>&1 | tee -a out_${R1}_MP.log & \
+	wait
 	"""
 }else{
 	args_1 = args_values[0]
@@ -179,7 +181,7 @@ if(mate=="pair"){
 	"""
 	echo -e "Assuming inputs for R1\n"
 	
-	MaskPrimers.py ${args_1} -s ${reads} ${R1_primers} --log MP_${name}.log  --nproc ${nproc} ${failed} >> out_${R1}_MP.log
+	MaskPrimers.py ${args_1} -s ${reads} ${R1_primers} --log MP_${name}.log  --nproc ${nproc} ${failed} ${fasta} 2>&1 | tee -a out_${R1}_MP.log
 	"""
 }
 
@@ -223,232 +225,6 @@ awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${u
 """
 
 
-}
-
-
-process Mask_Primer_parse_log_MP {
-
-input:
- val mate from g_1_mate_g38_9
- set val(name), file(log_file) from g38_11_logFile2_g38_9
-
-output:
- set val(name), file("*.tab")  into g38_9_logFile0_g38_12
-
-script:
-readArray = log_file.toString()	
-
-"""
-ParseLog.py -l ${readArray}  -f ID PRIMER BARCODE ERROR
-"""
-
-}
-
-
-process Mask_Primer_try_report_maskprimer {
-
-input:
- set val(name), file(primers) from g38_9_logFile0_g38_12
- val matee from g_1_mate_g38_12
-
-output:
- file "*.rmd"  into g38_12_rMarkdown0_g38_16
-
-
-shell:
-
-if(matee=="pair"){
-	readArray = primers.toString().split(' ')	
-	primers_1 = readArray[0]
-	primers_2 = readArray[1]
-
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	```{r, message=FALSE, echo=FALSE, results="hide"}
-	
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	
-	plot_titles<- c("Read 1", "Read 2")
-	print(plot_titles)
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("primers_count", 
-	        paste("Count of assigned primers for",  plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
-	              "The bar height indicates the total reads assigned to the given primer,
-	               stacked for those under the error rate threshold (Pass) and
-	               over the threshold (Fail)."))
-	figures("primers_hist", 
-	        paste("Distribution of primer match error rates for", plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
-	              "The error rate is the percentage of mismatches between the primer sequence and the 
-	               read for the best matching primer. The dotted line indicates the error threshold used."))
-	figures("primers_error", 
-	        paste("Distribution of primer match error rates for", plot_titles[1], "(top) and", plot_titles[2], "(bottom),",
-	              "broken down by assigned primer. The error rate is the percentage of mismatches between the 
-	               primer sequence and the read for the best matching primer. The dotted line indicates the error
-	               threshold used."))
-	```
-	
-	```{r, echo=FALSE}
-	primer_log_1 <- loadLogTable(file.path(".", "!{primers_1}"))
-	primer_log_2 <- loadLogTable(file.path(".", "!{primers_2}"))
-	```
-	
-	# Primer Identification
-	
-	The MaskPrimers tool supports identification of multiplexed primers and UMIs.
-	Identified primer regions may be masked (with Ns) or cut to mitigate downstream
-	SHM analysis artifacts due to errors in the primer region. An annotion is added to 
-	each sequences that indicates the UMI and best matching primer. In the case of
-	the constant region primer, the primer annotation may also be used for isotype 
-	assignment.
-	
-	## Count of primer matches
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotMaskPrimers(primer_log_1, primer_log_2, titles=plot_titles,
-	                style="count", sizing="figure")
-	```
-	
-	`r figures("primers_count")`
-	
-	## Primer match error rates
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotMaskPrimers(primer_log_1, primer_log_2, titles=plot_titles, 
-	                style="hist", sizing="figure")
-	```
-	
-	`r figures("primers_hist")`
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotMaskPrimers(primer_log_1, primer_log_2, titles=plot_titles, 
-	                style="error", sizing="figure")
-	```
-	
-	`r figures("primers_error")`
-	
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-
-}else{
-
-	readArray = primers.toString().split(' ')
-	primers = readArray.grep(~/.*.tab*/)[0]
-
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	```{r, message=FALSE, echo=FALSE, results="hide"}
-	
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	
-	plot_titles<- c("Read")
-	print(plot_titles)
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("primers_count", 
-	        paste("Count of assigned primers for",  plot_titles[1],
-	              "The bar height indicates the total reads assigned to the given primer,
-	               stacked for those under the error rate threshold (Pass) and
-	               over the threshold (Fail)."))
-	figures("primers_hist", 
-	        paste("Distribution of primer match error rates for", plot_titles[1],
-	              "The error rate is the percentage of mismatches between the primer sequence and the 
-	               read for the best matching primer. The dotted line indicates the error threshold used."))
-	figures("primers_error", 
-	        paste("Distribution of primer match error rates for", plot_titles[1],
-	              "broken down by assigned primer. The error rate is the percentage of mismatches between the 
-	               primer sequence and the read for the best matching primer. The dotted line indicates the error
-	               threshold used."))
-	```
-	
-	```{r, echo=FALSE}
-	primer_log_1 <- loadLogTable(file.path(".", "!{primers}"))
-	```
-	
-	# Primer Identification
-	
-	The MaskPrimers tool supports identification of multiplexed primers and UMIs.
-	Identified primer regions may be masked (with Ns) or cut to mitigate downstream
-	SHM analysis artifacts due to errors in the primer region. An annotion is added to 
-	each sequences that indicates the UMI and best matching primer. In the case of
-	the constant region primer, the primer annotation may also be used for isotype 
-	assignment.
-	
-	## Count of primer matches
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotMaskPrimers(primer_log_1, titles=plot_titles,
-	                style="count", sizing="figure")
-	```
-	
-	`r figures("primers_count")`
-	
-	## Primer match error rates
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotMaskPrimers(primer_log_1, titles=plot_titles, 
-	                style="hist", sizing="figure")
-	```
-	
-	`r figures("primers_hist")`
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotMaskPrimers(primer_log_1, titles=plot_titles, 
-	                style="error", sizing="figure")
-	```
-	
-	`r figures("primers_error")`
-	
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-}
-}
-
-
-process Mask_Primer_render_rmarkdown {
-
-input:
- file rmk from g38_12_rMarkdown0_g38_16
-
-output:
- file "*.html"  into g38_16_outputFileHTML00
- file "*csv" optional true  into g38_16_csvFile11
-
-"""
-
-#!/usr/bin/env Rscript 
-
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
-
-"""
 }
 
 
@@ -525,6 +301,167 @@ if(mate=="pair"){
 	"""
 }
 
+}
+
+
+process Align_Sets_parse_log_AS {
+
+input:
+ set val(name), file(log_file) from g52_0_logFile1_g52_1
+ val mate from g_1_mate_g52_1
+
+output:
+ set val(name), file("*.tab")  into g52_1_logFile0_g52_8
+
+script:
+field_to_parse = params.Align_Sets_parse_log_AS.field_to_parse
+readArray = log_file.toString()	
+
+"""
+ParseLog.py -l ${readArray}  -f ${field_to_parse}
+"""
+
+}
+
+
+process Align_Sets_report_Align_Sets {
+
+input:
+ set val(name), file(log_files) from g52_1_logFile0_g52_8
+ val matee from g_1_mate_g52_8
+
+output:
+ file "*.rmd"  into g52_8_rMarkdown0_g52_9
+
+
+shell:
+
+if(matee=="pair"){
+	readArray = log_files.toString().split(' ')	
+	R1 = readArray[0]
+	R2 = readArray[1]
+
+	'''
+	#!/usr/bin/env perl
+	
+	
+	my $script = <<'EOF';
+	
+	
+	```{R, message=FALSE, echo=FALSE, results="hide"}
+	# Setup
+	library(prestor)
+	library(knitr)
+	library(captioner)
+	
+	plot_titles <- plot_titles<- c("Read 1", "Read 2")
+	if (!exists("tables")) { tables <- captioner(prefix="Table") }
+	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+	figures("align_size", 
+	        paste("Histogram of UMI read group sizes (reads per UMI) for", plot_titles[1], "(top) and", plot_titles[2],
+	        "(bottom). The x-axis indicates the number of reads in a UMI group and the y-axis is the 
+	        number of UMI groups with that size."))
+	
+	```
+	
+	```{r, echo=FALSE}
+	align_log_1 <- loadLogTable(file.path(".", "!{R1}"))
+	align_log_2 <- loadLogTable(file.path(".", "!{R2}"))
+	```
+	
+	# Multiple Alignment of UMI Read Groups
+	
+	Reads sharing the same UMI are multiple aligned using the muscle wrapper in the 
+	AlignSets tool.
+	
+	## Reads per UMI
+	
+	```{r, echo=FALSE}
+	plotAlignSets(align_log_1, align_log_2, style="size", sizing="figure")
+	```
+	
+	`r figures("align_size")`
+
+	
+	EOF
+	
+	open OUT, ">!{name}.rmd";
+	print OUT $script;
+	close OUT;
+	
+	'''
+
+}else{
+	
+	readArray = log_files.toString().split(' ')
+	R1 = readArray[0]
+	
+	'''
+	#!/usr/bin/env perl
+	
+	
+	my $script = <<'EOF';
+	
+	
+	```{R, message=FALSE, echo=FALSE, results="hide"}
+	# Setup
+	library(prestor)
+	library(knitr)
+	library(captioner)
+	
+	if (!exists("tables")) { tables <- captioner(prefix="Table") }
+	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+	figures("align_size", 
+	        "Histogram of UMI read group sizes (reads per UMI). 
+	        The x-axis indicates the number of reads in a UMI group and the y-axis is the 
+	        number of UMI groups with that size.")
+	```
+	
+	```{r, echo=FALSE}
+	align_log <- loadLogTable(file.path(".","!{R1}"))
+	```
+	
+	# Multiple Alignment of UMI Read Groups
+	
+	Reads sharing the same UMI are multiple aligned using the muscle wrapper in the 
+	AlignSets tool.
+	
+	## Reads per UMI
+	
+	```{r, echo=FALSE}
+	plotAlignSets(align_log, style="size", sizing="figure")
+	```
+	
+	`r figures("align_size")`
+	
+	EOF
+	
+	open OUT, ">!{name}.rmd";
+	print OUT $script;
+	close OUT;
+	
+	'''
+}
+
+}
+
+
+process Align_Sets_render_rmarkdown {
+
+input:
+ file rmk from g52_8_rMarkdown0_g52_9
+
+output:
+ file "*.html"  into g52_9_outputFileHTML00
+ file "*csv" optional true  into g52_9_csvFile11
+
+"""
+
+#!/usr/bin/env Rscript 
+
+rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
+
+"""
 }
 
 boolean isCollectionOrArray_bc(object) {    
@@ -1235,174 +1172,12 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 }
 
 
-process Align_Sets_parse_log_AS {
-
-input:
- set val(name), file(log_file) from g52_0_logFile1_g52_1
- val mate from g_1_mate_g52_1
-
-output:
- set val(name), file("*.tab")  into g52_1_logFile0_g52_8
-
-script:
-field_to_parse = params.Align_Sets_parse_log_AS.field_to_parse
-readArray = log_file.toString()	
-
-"""
-ParseLog.py -l ${readArray}  -f ${field_to_parse}
-"""
-
-}
-
-
-process Align_Sets_report_Align_Sets {
-
-input:
- set val(name), file(log_files) from g52_1_logFile0_g52_8
- val matee from g_1_mate_g52_8
-
-output:
- file "*.rmd"  into g52_8_rMarkdown0_g52_9
-
-
-shell:
-
-if(matee=="pair"){
-	readArray = log_files.toString().split(' ')	
-	R1 = readArray[0]
-	R2 = readArray[1]
-
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	plot_titles <- plot_titles<- c("Read 1", "Read 2")
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("align_size", 
-	        paste("Histogram of UMI read group sizes (reads per UMI) for", plot_titles[1], "(top) and", plot_titles[2],
-	        "(bottom). The x-axis indicates the number of reads in a UMI group and the y-axis is the 
-	        number of UMI groups with that size."))
-	
-	```
-	
-	```{r, echo=FALSE}
-	align_log_1 <- loadLogTable(file.path(".", "!{R1}"))
-	align_log_2 <- loadLogTable(file.path(".", "!{R2}"))
-	```
-	
-	# Multiple Alignment of UMI Read Groups
-	
-	Reads sharing the same UMI are multiple aligned using the muscle wrapper in the 
-	AlignSets tool.
-	
-	## Reads per UMI
-	
-	```{r, echo=FALSE}
-	plotAlignSets(align_log_1, align_log_2, style="size", sizing="figure")
-	```
-	
-	`r figures("align_size")`
-
-	
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-
-}else{
-	
-	readArray = log_files.toString().split(' ')
-	R1 = readArray[0]
-	
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("align_size", 
-	        "Histogram of UMI read group sizes (reads per UMI). 
-	        The x-axis indicates the number of reads in a UMI group and the y-axis is the 
-	        number of UMI groups with that size.")
-	```
-	
-	```{r, echo=FALSE}
-	align_log <- loadLogTable(file.path(".","!{R1}"))
-	```
-	
-	# Multiple Alignment of UMI Read Groups
-	
-	Reads sharing the same UMI are multiple aligned using the muscle wrapper in the 
-	AlignSets tool.
-	
-	## Reads per UMI
-	
-	```{r, echo=FALSE}
-	plotAlignSets(align_log, style="size", sizing="figure")
-	```
-	
-	`r figures("align_size")`
-	
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-}
-
-}
-
-
-process Align_Sets_render_rmarkdown {
-
-input:
- file rmk from g52_8_rMarkdown0_g52_9
-
-output:
- file "*.html"  into g52_9_outputFileHTML00
- file "*csv" optional true  into g52_9_csvFile11
-
-"""
-
-#!/usr/bin/env Rscript 
-
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
-
-"""
-}
-
-
 process make_report_pipeline_cat_all_file {
 
 input:
  set val(name), file(log_file) from g52_0_logFile3_g61_0
  set val(name), file(log_file) from g22_10_logFile2_g61_0
  set val(name), file(log_file) from g37_9_logFile1_g61_0
- set val(name), file(log_file) from g38_11_logFile3_g61_0
 
 output:
  set val(name), file("all_out_file.log")  into g61_0_logFile0_g61_2, g61_0_logFile0_g61_10
@@ -1502,6 +1277,241 @@ input:
 output:
  file "*.html"  into g61_10_outputFileHTML00
  file "*csv" optional true  into g61_10_csvFile11
+
+"""
+
+#!/usr/bin/env Rscript 
+
+rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
+
+"""
+}
+
+
+process Mask_Primer_parse_log_MP {
+
+input:
+ val mate from g_1_mate_g38_9
+ set val(name), file(log_file) from g38_11_logFile2_g38_9
+
+output:
+ file "*table.tab"  into g38_9_logFile0_g38_12, g38_9_logFile0_g38_19
+
+script:
+readArray = log_file.toString()	
+
+"""
+ParseLog.py -l ${readArray}  -f ID PRIMER BARCODE ERROR
+"""
+
+}
+
+
+process Mask_Primer_try_report_maskprimer {
+
+input:
+ file primers from g38_9_logFile0_g38_12
+ val mate from g_1_mate_g38_12
+
+output:
+ file "*.rmd"  into g38_12_rMarkdown0_g38_19
+
+
+shell:
+
+if(mate=="pair"){
+	readArray = primers.toString().split(' ')	
+	primers_1 = readArray[0]
+	primers_2 = readArray[1]
+	name = primers_1 - "_table.tab"
+	'''
+	#!/usr/bin/env perl
+	
+	
+	my $script = <<'EOF';
+	
+	
+	```{r, message=FALSE, echo=FALSE, results="hide"}
+	
+	# Setup
+	library(prestor)
+	library(knitr)
+	library(captioner)
+	
+	
+	plot_titles<- c("Read 1", "Read 2")
+	print(plot_titles)
+	if (!exists("tables")) { tables <- captioner(prefix="Table") }
+	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+	figures("primers_count", 
+	        paste("Count of assigned primers for",  plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
+	              "The bar height indicates the total reads assigned to the given primer,
+	               stacked for those under the error rate threshold (Pass) and
+	               over the threshold (Fail)."))
+	figures("primers_hist", 
+	        paste("Distribution of primer match error rates for", plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
+	              "The error rate is the percentage of mismatches between the primer sequence and the 
+	               read for the best matching primer. The dotted line indicates the error threshold used."))
+	figures("primers_error", 
+	        paste("Distribution of primer match error rates for", plot_titles[1], "(top) and", plot_titles[2], "(bottom),",
+	              "broken down by assigned primer. The error rate is the percentage of mismatches between the 
+	               primer sequence and the read for the best matching primer. The dotted line indicates the error
+	               threshold used."))
+	```
+	
+	```{r, echo=FALSE}
+	primer_log_1 <- loadLogTable(file.path(".", "!{primers_1}"))
+	primer_log_2 <- loadLogTable(file.path(".", "!{primers_2}"))
+	
+	primer_log1_error <- any(is.na(primer_log_1[['ERROR']]))
+	primer_log2_error<- any(is.na(primer_log_2[['ERROR']]))
+	
+	```
+	
+	# Primer Identification
+	
+	The MaskPrimers tool supports identification of multiplexed primers and UMIs.
+	Identified primer regions may be masked (with Ns) or cut to mitigate downstream
+	SHM analysis artifacts due to errors in the primer region. An annotion is added to 
+	each sequences that indicates the UMI and best matching primer. In the case of
+	the constant region primer, the primer annotation may also be used for isotype 
+	assignment.
+	
+	## Count of primer matches
+	
+	```{r, echo=FALSE, warning=FALSE}
+	if(!primer_log1_error && !primer_log2_error)
+		plotMaskPrimers(primer_log_1, primer_log_2, titles=plot_titles,
+	                style="count", sizing="figure")
+	```
+	
+	`r figures("primers_count")`
+	
+	## Primer match error rates
+	
+	```{r, echo=FALSE, warning=FALSE}
+	if(!primer_log1_error && !primer_log2_error)
+		plotMaskPrimers(primer_log_1, primer_log_2, titles=plot_titles, 
+	                style="hist", sizing="figure")
+	```
+	
+	`r figures("primers_hist")`
+	
+	```{r, echo=FALSE, warning=FALSE}
+	# check the error column exists 
+	if(!primer_log1_error && !primer_log2_error)
+		plotMaskPrimers(primer_log_1, primer_log_2, titles=plot_titles, 
+	                style="error", sizing="figure")
+	```
+	
+	`r figures("primers_error")`
+	
+	EOF
+	
+	open OUT, ">!{name}.rmd";
+	print OUT $script;
+	close OUT;
+	
+	'''
+
+}else{
+
+	readArray = primers.toString().split(' ')
+	primers = readArray[0]
+	name = primers - "_table.tab"
+	'''
+	#!/usr/bin/env perl
+	
+	
+	my $script = <<'EOF';
+	
+	
+	```{r, message=FALSE, echo=FALSE, results="hide"}
+	
+	# Setup
+	library(prestor)
+	library(knitr)
+	library(captioner)
+	
+	
+	plot_titles<- c("Read")
+	print(plot_titles)
+	if (!exists("tables")) { tables <- captioner(prefix="Table") }
+	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+	figures("primers_count", 
+	        paste("Count of assigned primers for",  plot_titles[1],
+	              "The bar height indicates the total reads assigned to the given primer,
+	               stacked for those under the error rate threshold (Pass) and
+	               over the threshold (Fail)."))
+	figures("primers_hist", 
+	        paste("Distribution of primer match error rates for", plot_titles[1],
+	              "The error rate is the percentage of mismatches between the primer sequence and the 
+	               read for the best matching primer. The dotted line indicates the error threshold used."))
+	figures("primers_error", 
+	        paste("Distribution of primer match error rates for", plot_titles[1],
+	              "broken down by assigned primer. The error rate is the percentage of mismatches between the 
+	               primer sequence and the read for the best matching primer. The dotted line indicates the error
+	               threshold used."))
+	```
+	
+	```{r, echo=FALSE}
+	primer_log_1 <- loadLogTable(file.path(".", "!{primers}"))
+	```
+	
+	# Primer Identification
+	
+	The MaskPrimers tool supports identification of multiplexed primers and UMIs.
+	Identified primer regions may be masked (with Ns) or cut to mitigate downstream
+	SHM analysis artifacts due to errors in the primer region. An annotion is added to 
+	each sequences that indicates the UMI and best matching primer. In the case of
+	the constant region primer, the primer annotation may also be used for isotype 
+	assignment.
+	
+	## Count of primer matches
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plotMaskPrimers(primer_log_1, titles=plot_titles,
+	                style="count", sizing="figure")
+	```
+	
+	`r figures("primers_count")`
+	
+	## Primer match error rates
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plotMaskPrimers(primer_log_1, titles=plot_titles, 
+	                style="hist", sizing="figure")
+	```
+	
+	`r figures("primers_hist")`
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plotMaskPrimers(primer_log_1, titles=plot_titles, 
+	                style="error", sizing="figure")
+	```
+	
+	`r figures("primers_error")`
+	
+	EOF
+	
+	open OUT, ">!{name}.rmd";
+	print OUT $script;
+	close OUT;
+	
+	'''
+}
+}
+
+
+process Mask_Primer_presto_render_rmarkdown {
+
+input:
+ file rmk from g38_12_rMarkdown0_g38_19
+ file log_file from g38_9_logFile0_g38_19
+
+output:
+ file "*.html"  into g38_19_outputFileHTML00
+ file "*csv" optional true  into g38_19_csvFile11
 
 """
 
