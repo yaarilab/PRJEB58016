@@ -8,7 +8,7 @@ params.metadata.metadata = "${params.projectDir}/tools.json"
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_16;g_1_mate_g22_14;g_1_mate_g22_12;g_1_mate_g22_10;g_1_mate_g37_9;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g28_12;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g22_14;g_1_mate_g22_12;g_1_mate_g22_10;g_1_mate_g37_9;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g28_12;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -80,7 +80,7 @@ input:
  set val(name),file(reads) from g_63_reads0_g38_11
 
 output:
- set val(name), file("*_primers-pass.fast*")  into g38_11_reads0_g_16
+ set val(name), file("*_primers-pass.fast*")  into g38_11_reads0_g_71
  set val(name), file("*_primers-fail.fast*") optional true  into g38_11_reads_failed11
  set val(name), file("MP_*")  into g38_11_logFile2_g38_9
  set val(name),file("out*")  into g38_11_logFile3_g61_0
@@ -188,18 +188,18 @@ if(mate=="pair"){
 }
 
 
-process Cluster_UMI {
+process Cluster_UMI_p11 {
 
 input:
- set val(name),file(reads) from g38_11_reads0_g_16
- val mate from g_1_mate_g_16
+ set val(name),file(reads) from g38_11_reads0_g_71
+ val mate from g_1_mate_g_71
 
 output:
- set val(name),file("*_umi-pass.fastq") optional true  into g_16_reads0_g52_0
+ set val(name),file("*_umi-pass.fastq") optional true  into g_71_reads0_g52_0
 
 script:
-umi_field = params.Cluster_UMI.umi_field
-umi_cluster_script = params.Cluster_UMI.umi_cluster_script
+umi_field = params.Cluster_UMI_p11.umi_field
+umi_cluster_script = params.Cluster_UMI_p11.umi_cluster_script
 
 readArray = reads.toString().split(' ')	
 
@@ -220,8 +220,8 @@ cat ${R1} ${R2} | awk '{if (NR%4==1) {split(\$0,a,"${umi_field}="); print a[2]}}
 
 python3 ${umi_cluster_script} -i pair_pass.umi -o pair_pass.umi.convert
 
-awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1];} else {print}}' pair_pass.umi.convert ${R1} > ${R1}'_umi-pass.fastq'
-awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1] , b[2];} else {print}}' pair_pass.umi.convert ${R2} > ${R2}'_umi-pass.fastq'
+awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1] "|";} else {print}}' pair_pass.umi.convert ${R1} > ${R1}'_umi-pass.fastq'
+awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${umi_field}=");split(a[2],b,"|"); print a[1]"UMI="b[1] , b[2] "|";} else {print}}' pair_pass.umi.convert ${R2} > ${R2}'_umi-pass.fastq'
 """
 
 
@@ -466,7 +466,7 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 process Align_Sets_align_sets {
 
 input:
- set val(name),file(reads) from g_16_reads0_g52_0
+ set val(name),file(reads) from g_71_reads0_g52_0
  val mate from g_1_mate_g52_0
 
 output:
@@ -1067,125 +1067,6 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 }
 
 
-process make_report_pipeline_cat_all_file {
-
-input:
- set val(name), file(log_file) from g22_10_logFile2_g61_0
- set val(name), file(log_file) from g37_9_logFile1_g61_0
- set val(name), file(log_file) from g52_0_logFile3_g61_0
- set val(name), file(log_file) from g38_11_logFile3_g61_0
- set val(name), file(log_file) from g70_9_logFile1_g61_0
- set val(name), file(log_file) from g28_12_logFile3_g61_0
-
-output:
- set val(name), file("all_out_file.log")  into g61_0_logFile0_g61_2, g61_0_logFile0_g61_10
-
-script:
-readArray = log_file.toString()
-
-"""
-
-echo $readArray
-cat out* >> all_out_file.log
-"""
-
-}
-
-
-process make_report_pipeline_report_pipeline {
-
-input:
- set val(name), file(log_files) from g61_0_logFile0_g61_2
-
-output:
- file "*.rmd"  into g61_2_rMarkdown0_g61_10
-
-
-shell:
-
-readArray = log_files.toString().split(' ')
-R1 = readArray[0]
-
-'''
-#!/usr/bin/env perl
-
-
-my $script = <<'EOF';
-
-
-```{r, message=FALSE, echo=FALSE, results="hide"}
-# Setup
-library(prestor)
-library(knitr)
-library(captioner)
-
-plot_titles <- c("Read 1", "Read 2")
-if (!exists("tables")) { tables <- captioner(prefix="Table") }
-if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-tables("count", 
-       "The count of reads that passed and failed each processing step.")
-figures("steps", 
-        paste("The number of reads or read sets retained at each processing step. 
-               Shown as raw counts (top) and percentages of input from the previous 
-               step (bottom). Steps having more than one column display individual values for", 
-              plot_titles[1], "(first column) and", plot_titles[2], "(second column)."))
-```
-
-```{r, echo=FALSE}
-console_log <- loadConsoleLog(file.path(".","!{R1}"))
-```
-
-# Summary of Processing Steps
-
-```{r, echo=FALSE}
-count_df <- plotConsoleLog(console_log, sizing="figure")
-
-df<-count_df[,c("task", "pass", "fail")]
-
-write.csv(df,"pipeline_statistics.csv") 
-```
-
-`r figures("steps")`
-
-```{r, echo=FALSE}
-kable(count_df[c("step", "task", "total", "pass", "fail")],
-      col.names=c("Step", "Task", "Input", "Passed", "Failed"),
-      digits=3)
-```
-
-`r tables("count")`
-
-
-EOF
-	
-open OUT, ">pipeline_statistic_!{name}.rmd";
-print OUT $script;
-close OUT;
-
-'''
-}
-
-
-process make_report_pipeline_presto_render_rmarkdown {
-
-input:
- file rmk from g61_2_rMarkdown0_g61_10
- file log_file from g61_0_logFile0_g61_10
-
-output:
- file "*.html"  into g61_10_outputFileHTML00
- file "*csv" optional true  into g61_10_csvFile11
-
-"""
-
-#!/usr/bin/env Rscript 
-
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
-
-"""
-}
-
-
 process Build_Consensus_parse_log_BC {
 
 input:
@@ -1585,6 +1466,125 @@ input:
 output:
  file "*.html"  into g52_13_outputFileHTML00
  file "*csv" optional true  into g52_13_csvFile11
+
+"""
+
+#!/usr/bin/env Rscript 
+
+rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
+
+"""
+}
+
+
+process make_report_pipeline_cat_all_file {
+
+input:
+ set val(name), file(log_file) from g22_10_logFile2_g61_0
+ set val(name), file(log_file) from g37_9_logFile1_g61_0
+ set val(name), file(log_file) from g52_0_logFile3_g61_0
+ set val(name), file(log_file) from g38_11_logFile3_g61_0
+ set val(name), file(log_file) from g70_9_logFile1_g61_0
+ set val(name), file(log_file) from g28_12_logFile3_g61_0
+
+output:
+ set val(name), file("all_out_file.log")  into g61_0_logFile0_g61_2, g61_0_logFile0_g61_10
+
+script:
+readArray = log_file.toString()
+
+"""
+
+echo $readArray
+cat out* >> all_out_file.log
+"""
+
+}
+
+
+process make_report_pipeline_report_pipeline {
+
+input:
+ set val(name), file(log_files) from g61_0_logFile0_g61_2
+
+output:
+ file "*.rmd"  into g61_2_rMarkdown0_g61_10
+
+
+shell:
+
+readArray = log_files.toString().split(' ')
+R1 = readArray[0]
+
+'''
+#!/usr/bin/env perl
+
+
+my $script = <<'EOF';
+
+
+```{r, message=FALSE, echo=FALSE, results="hide"}
+# Setup
+library(prestor)
+library(knitr)
+library(captioner)
+
+plot_titles <- c("Read 1", "Read 2")
+if (!exists("tables")) { tables <- captioner(prefix="Table") }
+if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+tables("count", 
+       "The count of reads that passed and failed each processing step.")
+figures("steps", 
+        paste("The number of reads or read sets retained at each processing step. 
+               Shown as raw counts (top) and percentages of input from the previous 
+               step (bottom). Steps having more than one column display individual values for", 
+              plot_titles[1], "(first column) and", plot_titles[2], "(second column)."))
+```
+
+```{r, echo=FALSE}
+console_log <- loadConsoleLog(file.path(".","!{R1}"))
+```
+
+# Summary of Processing Steps
+
+```{r, echo=FALSE}
+count_df <- plotConsoleLog(console_log, sizing="figure")
+
+df<-count_df[,c("task", "pass", "fail")]
+
+write.csv(df,"pipeline_statistics.csv") 
+```
+
+`r figures("steps")`
+
+```{r, echo=FALSE}
+kable(count_df[c("step", "task", "total", "pass", "fail")],
+      col.names=c("Step", "Task", "Input", "Passed", "Failed"),
+      digits=3)
+```
+
+`r tables("count")`
+
+
+EOF
+	
+open OUT, ">pipeline_statistic_!{name}.rmd";
+print OUT $script;
+close OUT;
+
+'''
+}
+
+
+process make_report_pipeline_presto_render_rmarkdown {
+
+input:
+ file rmk from g61_2_rMarkdown0_g61_10
+ file log_file from g61_0_logFile0_g61_10
+
+output:
+ file "*.html"  into g61_10_outputFileHTML00
+ file "*csv" optional true  into g61_10_csvFile11
 
 """
 
