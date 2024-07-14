@@ -8,7 +8,7 @@ params.metadata.metadata = "${params.projectDir}/tools.json"
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g22_14;g_1_mate_g22_12;g_1_mate_g22_10;g_1_mate_g37_9;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g37_9;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g22_10;g_1_mate_g22_12;g_1_mate_g22_14}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -607,405 +607,6 @@ if(mate=="pair"){
 
 }
 
-boolean isCollectionOrArray_bc(object) {    
-    [Collection, Object[]].any { it.isAssignableFrom(object.getClass()) }
-}
-
-def args_creator_bc(barcode_field, primer_field, act, copy_field, mincount, minqual, minfreq, maxerror, prcons, maxgap, maxdiv, dep){
-	def args_values;
-    if(isCollectionOrArray_bc(barcode_field) || isCollectionOrArray_bc(primer_field) || isCollectionOrArray_bc(copy_field) || isCollectionOrArray_bc(mincount) || isCollectionOrArray_bc(minqual) || isCollectionOrArray_bc(minfreq) || isCollectionOrArray_bc(maxerror) || isCollectionOrArray_bc(prcons) || isCollectionOrArray_bc(maxgap) || isCollectionOrArray_bc(maxdiv) || isCollectionOrArray_bc(dep)){
-    	primer_field = (isCollectionOrArray_bc(primer_field)) ? primer_field : [primer_field,primer_field]
-    	act = (isCollectionOrArray_bc(act)) ? act : [act,act]
-    	copy_field = (isCollectionOrArray_bc(copy_field)) ? copy_field : [copy_field,copy_field]
-    	mincount = (isCollectionOrArray_bc(mincount)) ? mincount : [mincount,mincount]
-    	minqual = (isCollectionOrArray_bc(minqual)) ? minqual : [minqual,minqual]
-    	minfreq = (isCollectionOrArray_bc(minfreq)) ? minfreq : [minfreq,minfreq]
-    	maxerror = (isCollectionOrArray_bc(maxerror)) ? maxerror : [maxerror,maxerror]
-    	prcons = (isCollectionOrArray_bc(prcons)) ? prcons : [prcons,prcons]
-    	maxgap = (isCollectionOrArray_bc(maxgap)) ? maxgap : [maxgap,maxgap]
-    	maxdiv = (isCollectionOrArray_bc(maxdiv)) ? maxdiv : [maxdiv,maxdiv]
-    	dep = (isCollectionOrArray_bc(dep)) ? dep : [dep,dep]
-    	args_values = []
-        [barcode_field,primer_field,act,copy_field,mincount,minqual,minfreq,maxerror,prcons,maxgap,maxdiv,dep].transpose().each { bf,pf,a,cf,mc,mq,mf,mr,pc,mg,md,d -> {
-            bf = (bf=="") ? "" : "--bf ${bf}"
-            pf = (pf=="") ? "" : "--pf ${pf}" 
-            a = (a=="none") ? "" : "--act ${a}" 
-            cf = (cf=="") ? "" : "--cf ${cf}" 
-            mr = (mr=="none") ? "" : "--maxerror ${mr}" 
-            pc = (pc=="none") ? "" : "--prcons ${pc}" 
-            mg = (mg=="none") ? "" : "--maxgap ${mg}" 
-            md = (md=="none") ? "" : "--maxdiv ${md}" 
-            d = (d=="true") ? "--dep" : "" 
-            args_values.add("${bf} ${pf} ${a} ${cf} -n ${mc} -q ${mq} --freq ${mf} ${mr} ${pc} ${mg} ${md} ${d}")
-        }}
-    }else{
-        barcode_field = (barcode_field=="") ? "" : "--bf ${barcode_field}"
-        primer_field = (primer_field=="") ? "" : "--pf ${primer_field}" 
-        act = (act=="none") ? "" : "--act ${act}" 
-        copy_field = (copy_field=="") ? "" : "--cf ${copy_field}" 
-        maxerror = (maxerror=="none") ? "" : "--maxerror ${maxerror}" 
-        prcons = (prcons=="none") ? "" : "--prcons ${prcons}" 
-        maxgap = (maxgap=="none") ? "" : "--maxgap ${maxgap}" 
-        maxdiv = (maxdiv=="none") ? "" : "--maxdiv ${maxdiv}" 
-        dep = (dep=="true") ? "--dep" : "" 
-        args_values = "${barcode_field} ${primer_field} ${act} ${copy_field} -n ${mincount} -q ${minqual} --freq ${minfreq} ${maxerror} ${prcons} ${maxgap} ${maxdiv} ${dep}"
-    }
-    return args_values
-}
-
-
-process Build_Consensus_build_consensus {
-
-input:
- set val(name),file(reads) from g70_9_reads0_g22_10
- val mate from g_1_mate_g22_10
-
-output:
- set val(name),file("*_consensus-pass.fastq")  into g22_10_reads0_g37_9
- set val(name),file("BC*")  into g22_10_logFile1_g22_12
- set val(name),file("out*")  into g22_10_logFile2_g61_0
-
-script:
-failed = params.Build_Consensus_build_consensus.failed
-nproc = params.Build_Consensus_build_consensus.nproc
-barcode_field = params.Build_Consensus_build_consensus.barcode_field
-primer_field = params.Build_Consensus_build_consensus.primer_field
-act = params.Build_Consensus_build_consensus.act
-copy_field = params.Build_Consensus_build_consensus.copy_field
-mincount = params.Build_Consensus_build_consensus.mincount
-minqual = params.Build_Consensus_build_consensus.minqual
-minfreq = params.Build_Consensus_build_consensus.minfreq
-maxerror = params.Build_Consensus_build_consensus.maxerror
-prcons = params.Build_Consensus_build_consensus.prcons
-maxgap = params.Build_Consensus_build_consensus.maxgap
-maxdiv = params.Build_Consensus_build_consensus.maxdiv
-dep = params.Build_Consensus_build_consensus.dep
-//* @style @condition:{act="none",},{act="min",copy_field},{act="max",copy_field},{act="sum",copy_field},{act="set",copy_field},{act="majority",copy_field} @array:{barcode_field,primer_field,act,copy_field,mincount,minqual,minfreq,maxerror,prcons,maxgap,maxdiv,dep} @multicolumn:{failed,nproc},{barcode_field,primer_field,act,copy_field}, {mincount,minqual,minfreq,maxerror,prcons,maxgap,maxdiv,dep}
-
-args_values_bc = args_creator_bc(barcode_field, primer_field, act, copy_field, mincount, minqual, minfreq, maxerror, prcons, maxgap, maxdiv, dep)
-
-// args 
-if(isCollectionOrArray_bc(args_values_bc)){
-	args_1 = args_values_bc[0]
-	args_2 = args_values_bc[1]
-}else{
-	args_1 = args_values_bc
-	args_2 = args_values_bc
-}
-
-failed = (failed=="true") ? "--failed" : "" 
-
-
-if(mate=="pair"){
-	// files
-	readArray = reads.toString().split(' ')	
-	R1 = readArray[0]
-	R2 = readArray[1]
-	
-	"""
-	BuildConsensus.py --version
-	BuildConsensus.py -s $R1 ${args_1} --log BC_${name}_R1.log ${failed} --nproc ${nproc} >> out_${R1}_BC.log
-	BuildConsensus.py -s $R2 ${args_2} --log BC_${name}_R2.log ${failed} --nproc ${nproc} >> out_${R1}_BC.log
-	"""
-}else{
-	"""
-	BuildConsensus.py -s $reads ${args_1} --outname ${name} --log BC_${name}.log ${failed} --nproc ${nproc} >> out_${R1}_BC.log
-	"""
-}
-
-
-}
-
-
-process Pair_Sequence_post_consensus_pair_seq {
-
-input:
- set val(name),file(reads) from g22_10_reads0_g37_9
- val mate from g_1_mate_g37_9
-
-output:
- set val(name),file("*_pair-pass.fastq")  into g37_9_reads0_g28_12
- set val(name),file("out*")  into g37_9_logFile1_g61_0
-
-script:
-coord = params.Pair_Sequence_post_consensus_pair_seq.coord
-act = params.Pair_Sequence_post_consensus_pair_seq.act
-copy_fields_1 = params.Pair_Sequence_post_consensus_pair_seq.copy_fields_1
-copy_fields_2 = params.Pair_Sequence_post_consensus_pair_seq.copy_fields_2
-failed = params.Pair_Sequence_post_consensus_pair_seq.failed
-nproc = params.Pair_Sequence_post_consensus_pair_seq.nproc
-
-if(mate=="pair"){
-	
-	act = (act=="none") ? "" : "--act ${act}"
-	failed = (failed=="true") ? "--failed" : "" 
-	copy_fields_1 = (copy_fields_1=="") ? "" : "--1f ${copy_fields_1}" 
-	copy_fields_2 = (copy_fields_2=="") ? "" : "--2f ${copy_fields_2}"
-	
-	readArray = reads.toString().split(' ')	
-	R1 = readArray[0]
-	R2 = readArray[1]
-	"""
-	PairSeq.py -1 ${R1} -2 ${R2} ${copy_fields_1} ${copy_fields_2} --coord ${coord} ${act} ${failed} >> out_${R1}_PS.log
-	"""
-}else{
-	
-	"""
-	echo -e 'PairSeq works only on pair-end reads.'
-	"""
-}
-
-
-}
-
-
-process Build_Consensus_parse_log_BC {
-
-input:
- set val(name),file(log_file) from g22_10_logFile1_g22_12
- val mate from g_1_mate_g22_12
-
-output:
- set val(name),file("*.tab")  into g22_12_logFile0_g22_14
-
-script:
-readArray = log_file.toString()
-
-"""
-ParseLog.py -l ${readArray} -f BARCODE SEQCOUNT CONSCOUNT PRCONS PRFREQ ERROR
-"""
-
-}
-
-
-process Build_Consensus_report_Build_Consensus {
-
-input:
- set val(name),file(log_files) from g22_12_logFile0_g22_14
- val matee from g_1_mate_g22_14
-
-output:
- file "*.rmd"  into g22_14_rMarkdown0_g22_16
-
-
-
-
-shell:
-
-if(matee=="pair"){
-	readArray = log_files.toString().split(' ')	
-	R1 = readArray[0]
-	R2 = readArray[1]
-
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	plot_titles <- c("Read 1", "Read 2")
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("cons_size", 
-	        paste("Histogram of UMI read group sizes (reads per UMI) for",  
-	              plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
-	              "The x-axis indicates the number of reads in a UMI group and the y-axis is the 
-	               number of UMI groups with that size. The Consensus and Total bars are overlayed 
-	               (not stacked) histograms indicating whether the distribution has been calculated 
-	               using the total number of reads (Total) or only those reads used for consensus 
-	               generation (Consensus)."))
-	figures("cons_prfreq", 
-	        paste("Histograms showing the distribution of majority primer frequency for all UMI read groups for",
-	              plot_titles[1], "(top) and", plot_titles[2], "(bottom)."))
-	figures("cons_prsize", 
-	        paste("Violin plots showing the distribution of UMI read group sizes by majority primer for",
-	              plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
-	              "Only groups with majority primer frequency over the PRFREQ threshold set when running
-	               BuildConsensus. Meaning, only retained UMI groups."))
-	figures("cons_error", 
-	        paste("Histogram showing the distribution of UMI read group error rates for",
-	              plot_titles[1], "(top) and", plot_titles[2], "(bottom)."))
-	figures("cons_prerror", 
-	        paste("Violin plots showing the distribution of UMI read group error rates by majority primer for",
-	              plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
-	              "Only groups with majority primer frequency over the PRFREQ threshold set when 
-	               running BuildConsensus. Meaning, only retained UMI groups."))
-	```
-	
-	```{r, echo=FALSE}
-	consensus_log_1 <- loadLogTable(file.path(".", "!{R1}"))
-	consensus_log_2 <- loadLogTable(file.path(".", "!{R2}"))
-	```
-	
-	# Generation of UMI Consensus Sequences
-	
-	Reads sharing the same UMI are collapsed into a single consensus sequence by
-	the BuildConsensus tool. BuildConsensus considers several factors in determining
-	the final consensus sequence, including the number of reads in a UMI group, 
-	Phred quality scores (`Q`), primer annotations, and the number of mismatches 
-	within a UMI group. Quality scores are used to resolve conflicting base calls in
-	a UMI read group and the final consensus sequence is assigned consensus quality 
-	scores derived from the individual base quality scores. The numbers of reads in a UMI
-	group, number of matching primer annotations, and error rate (average base mismatches from 
-	consensus) are used as strict cut-offs for exclusion of erroneous UMI read groups.
-	Additionally, individual reads are excluded whose primer annotation differs from 
-	the majority in cases where there are sufficient number of reads exceeding 
-	the primer consensus cut-off.
-	
-	## Reads per UMI
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
-	                   style="size", sizing="figure")
-	```
-	
-	`r figures("cons_size")`
-	
-	## UMI read group primer frequencies
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
-	                   style="prfreq", sizing="figure")
-	```
-	
-	`r figures("cons_prfreq")`
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
-	                   style="prsize", sizing="figure")
-	```
-	
-	`r figures("cons_prsize")`
-	
-	## UMI read group error rates
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
-	                   style="error", sizing="figure")
-	```
-	
-	`r figures("cons_error")`
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
-	                   style="prerror", sizing="figure")
-	```
-	
-	`r figures("cons_prerror")`
-	
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-
-}else{
-	
-	readArray = log_files.toString().split(' ')
-	R1 = readArray[0]
-	
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	
-		
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("cons_size", "Histogram of UMI read group sizes (reads per UMI). 
-	                      The x-axis indicates the number of reads 
-	                      in a UMI group and the y-axis is the number of UMI groups 
-	                      with that size. The Consensus and Total bars are overlayed
-	                      (not stacked) histograms indicating whether the distribution
-	                      has been calculated using the total number of reads (Total)
-	                      or only those reads used for consensus generation (Consensus).")
-	figures("cons_error", "Histogram showing the distribution of UMI read group error rates.")
-	```
-	
-	```{r, echo=FALSE}
-	consensus_log <- loadLogTable(file.path(".", "!{R1}"))
-	```
-	
-	# Generation of UMI Consensus Sequences
-	
-	Reads sharing the same UMI are collapsed into a single consensus sequence by
-	the BuildConsensus tool. BuildConsensus considers several factors in determining
-	the final consensus sequence, including the number of reads in a UMI group, 
-	Phred quality scores (`Q`), primer annotations, and the number of mismatches 
-	within a UMI group. Quality scores are used to resolve conflicting base calls in
-	a UMI read group and the final consensus sequence is assigned consensus quality 
-	scores derived from the individual base quality scores. The numbers of reads in a UMI
-	group, number of matching primer annotations, and error rate (average base mismatches from 
-	consensus) are used as strict cut-offs for exclusion of erroneous UMI read groups.
-	Additionally, individual reads are excluded whose primer annotation differs from 
-	the majority in cases where there are sufficient number of reads exceeding 
-	the primer consensus cut-off.
-	
-	## Reads per UMI
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log, style="size", sizing="figure")
-	```
-	
-	`r figures("cons_size")`
-	
-	## UMI read group error rates
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log, style="error", sizing="figure")
-	```
-	
-	`r figures("cons_error")`
-	
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-}
-
-}
-
-
-process Build_Consensus_render_rmarkdown {
-
-input:
- file rmk from g22_14_rMarkdown0_g22_16
-
-output:
- file "*.html"  into g22_16_outputFileHTML00
- file "*csv" optional true  into g22_16_csvFile11
-
-"""
-
-#!/usr/bin/env Rscript 
-
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
-
-"""
-}
-
 
 process Align_Sets_parse_log_AS {
 
@@ -1168,122 +769,156 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 """
 }
 
+boolean isCollectionOrArray_bc(object) {    
+    [Collection, Object[]].any { it.isAssignableFrom(object.getClass()) }
+}
 
-process make_report_pipeline_cat_all_file {
+def args_creator_bc(barcode_field, primer_field, act, copy_field, mincount, minqual, minfreq, maxerror, prcons, maxgap, maxdiv, dep){
+	def args_values;
+    if(isCollectionOrArray_bc(barcode_field) || isCollectionOrArray_bc(primer_field) || isCollectionOrArray_bc(copy_field) || isCollectionOrArray_bc(mincount) || isCollectionOrArray_bc(minqual) || isCollectionOrArray_bc(minfreq) || isCollectionOrArray_bc(maxerror) || isCollectionOrArray_bc(prcons) || isCollectionOrArray_bc(maxgap) || isCollectionOrArray_bc(maxdiv) || isCollectionOrArray_bc(dep)){
+    	primer_field = (isCollectionOrArray_bc(primer_field)) ? primer_field : [primer_field,primer_field]
+    	act = (isCollectionOrArray_bc(act)) ? act : [act,act]
+    	copy_field = (isCollectionOrArray_bc(copy_field)) ? copy_field : [copy_field,copy_field]
+    	mincount = (isCollectionOrArray_bc(mincount)) ? mincount : [mincount,mincount]
+    	minqual = (isCollectionOrArray_bc(minqual)) ? minqual : [minqual,minqual]
+    	minfreq = (isCollectionOrArray_bc(minfreq)) ? minfreq : [minfreq,minfreq]
+    	maxerror = (isCollectionOrArray_bc(maxerror)) ? maxerror : [maxerror,maxerror]
+    	prcons = (isCollectionOrArray_bc(prcons)) ? prcons : [prcons,prcons]
+    	maxgap = (isCollectionOrArray_bc(maxgap)) ? maxgap : [maxgap,maxgap]
+    	maxdiv = (isCollectionOrArray_bc(maxdiv)) ? maxdiv : [maxdiv,maxdiv]
+    	dep = (isCollectionOrArray_bc(dep)) ? dep : [dep,dep]
+    	args_values = []
+        [barcode_field,primer_field,act,copy_field,mincount,minqual,minfreq,maxerror,prcons,maxgap,maxdiv,dep].transpose().each { bf,pf,a,cf,mc,mq,mf,mr,pc,mg,md,d -> {
+            bf = (bf=="") ? "" : "--bf ${bf}"
+            pf = (pf=="") ? "" : "--pf ${pf}" 
+            a = (a=="none") ? "" : "--act ${a}" 
+            cf = (cf=="") ? "" : "--cf ${cf}" 
+            mr = (mr=="none") ? "" : "--maxerror ${mr}" 
+            pc = (pc=="none") ? "" : "--prcons ${pc}" 
+            mg = (mg=="none") ? "" : "--maxgap ${mg}" 
+            md = (md=="none") ? "" : "--maxdiv ${md}" 
+            mc = (mc=="none") ? "" : "--n ${mc}" 
+            d = (d=="true") ? "--dep" : "" 
+            args_values.add("${bf} ${pf} ${a} ${cf} ${mc} -q ${mq} --freq ${mf} ${mr} ${pc} ${mg} ${md} ${d}")
+        }}
+    }else{
+        barcode_field = (barcode_field=="") ? "" : "--bf ${barcode_field}"
+        primer_field = (primer_field=="") ? "" : "--pf ${primer_field}" 
+        act = (act=="none") ? "" : "--act ${act}" 
+        copy_field = (copy_field=="") ? "" : "--cf ${copy_field}" 
+        maxerror = (maxerror=="none") ? "" : "--maxerror ${maxerror}" 
+        prcons = (prcons=="none") ? "" : "--prcons ${prcons}" 
+        maxgap = (maxgap=="none") ? "" : "--maxgap ${maxgap}" 
+        maxdiv = (maxdiv=="none") ? "" : "--maxdiv ${maxdiv}" 
+        dep = (dep=="true") ? "--dep" : "" 
+        args_values = "${barcode_field} ${primer_field} ${act} ${copy_field} -n ${mincount} -q ${minqual} --freq ${minfreq} ${maxerror} ${prcons} ${maxgap} ${maxdiv} ${dep}"
+    }
+    return args_values
+}
+
+
+process Build_Consensus_build_consensus {
 
 input:
- set val(name), file(log_file) from g22_10_logFile2_g61_0
- set val(name), file(log_file) from g37_9_logFile1_g61_0
- set val(name), file(log_file) from g52_0_logFile3_g61_0
- set val(name), file(log_file) from g38_11_logFile3_g61_0
- set val(name), file(log_file) from g70_9_logFile1_g61_0
+ set val(name),file(reads) from g70_9_reads0_g22_10
+ val mate from g_1_mate_g22_10
 
 output:
- set val(name), file("all_out_file.log")  into g61_0_logFile0_g61_2, g61_0_logFile0_g61_10
+ set val(name),file("*_consensus-pass.fastq")  into g22_10_reads0_g37_9
+ set val(name),file("BC*")  into g22_10_logFile1_g22_12
+ set val(name),file("out*")  into g22_10_logFile22
 
 script:
-readArray = log_file.toString()
+failed = params.Build_Consensus_build_consensus.failed
+nproc = params.Build_Consensus_build_consensus.nproc
+barcode_field = params.Build_Consensus_build_consensus.barcode_field
+primer_field = params.Build_Consensus_build_consensus.primer_field
+act = params.Build_Consensus_build_consensus.act
+copy_field = params.Build_Consensus_build_consensus.copy_field
+mincount = params.Build_Consensus_build_consensus.mincount
+minqual = params.Build_Consensus_build_consensus.minqual
+minfreq = params.Build_Consensus_build_consensus.minfreq
+maxerror = params.Build_Consensus_build_consensus.maxerror
+prcons = params.Build_Consensus_build_consensus.prcons
+maxgap = params.Build_Consensus_build_consensus.maxgap
+maxdiv = params.Build_Consensus_build_consensus.maxdiv
+dep = params.Build_Consensus_build_consensus.dep
+//* @style @condition:{act="none",},{act="min",copy_field},{act="max",copy_field},{act="sum",copy_field},{act="set",copy_field},{act="majority",copy_field} @array:{barcode_field,primer_field,act,copy_field,mincount,minqual,minfreq,maxerror,prcons,maxgap,maxdiv,dep} @multicolumn:{failed,nproc},{barcode_field,primer_field,act,copy_field}, {mincount,minqual,minfreq,maxerror,prcons,maxgap,maxdiv,dep}
 
-"""
+args_values_bc = args_creator_bc(barcode_field, primer_field, act, copy_field, mincount, minqual, minfreq, maxerror, prcons, maxgap, maxdiv, dep)
 
-echo $readArray
-cat out* >> all_out_file.log
-"""
-
+// args 
+if(isCollectionOrArray_bc(args_values_bc)){
+	args_1 = args_values_bc[0]
+	args_2 = args_values_bc[1]
+}else{
+	args_1 = args_values_bc
+	args_2 = args_values_bc
 }
 
-
-process make_report_pipeline_report_pipeline {
-
-input:
- set val(name), file(log_files) from g61_0_logFile0_g61_2
-
-output:
- file "*.rmd"  into g61_2_rMarkdown0_g61_10
+failed = (failed=="true") ? "--failed" : "" 
 
 
-shell:
-
-readArray = log_files.toString().split(' ')
-R1 = readArray[0]
-
-'''
-#!/usr/bin/env perl
-
-
-my $script = <<'EOF';
-
-
-```{r, message=FALSE, echo=FALSE, results="hide"}
-# Setup
-library(prestor)
-library(knitr)
-library(captioner)
-
-plot_titles <- c("Read 1", "Read 2")
-if (!exists("tables")) { tables <- captioner(prefix="Table") }
-if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-tables("count", 
-       "The count of reads that passed and failed each processing step.")
-figures("steps", 
-        paste("The number of reads or read sets retained at each processing step. 
-               Shown as raw counts (top) and percentages of input from the previous 
-               step (bottom). Steps having more than one column display individual values for", 
-              plot_titles[1], "(first column) and", plot_titles[2], "(second column)."))
-```
-
-```{r, echo=FALSE}
-console_log <- loadConsoleLog(file.path(".","!{R1}"))
-```
-
-# Summary of Processing Steps
-
-```{r, echo=FALSE}
-count_df <- plotConsoleLog(console_log, sizing="figure")
-
-df<-count_df[,c("task", "pass", "fail")]
-
-write.csv(df,"pipeline_statistics.csv") 
-```
-
-`r figures("steps")`
-
-```{r, echo=FALSE}
-kable(count_df[c("step", "task", "total", "pass", "fail")],
-      col.names=c("Step", "Task", "Input", "Passed", "Failed"),
-      digits=3)
-```
-
-`r tables("count")`
-
-
-EOF
+if(mate=="pair"){
+	// files
+	readArray = reads.toString().split(' ')	
+	R1 = readArray[0]
+	R2 = readArray[1]
 	
-open OUT, ">pipeline_statistic_!{name}.rmd";
-print OUT $script;
-close OUT;
-
-'''
+	"""
+	BuildConsensus.py --version
+	BuildConsensus.py -s $R1 ${args_1} --log BC_${name}_R1.log ${failed} --nproc ${nproc} 2>&1 | tee -a out_${R1}_BC.log
+	BuildConsensus.py -s $R2 ${args_2} --log BC_${name}_R2.log ${failed} --nproc ${nproc} 2>&1 | tee -a out_${R1}_BC.log
+	"""
+}else{
+	"""
+	BuildConsensus.py -s $reads ${args_1} --outname ${name} --log BC_${name}.log ${failed} --nproc ${nproc} 2>&1 | tee -a out_${R1}_BC.log
+	"""
 }
 
 
-process make_report_pipeline_presto_render_rmarkdown {
+}
+
+
+process Pair_Sequence_post_consensus_pair_seq {
 
 input:
- file rmk from g61_2_rMarkdown0_g61_10
- file log_file from g61_0_logFile0_g61_10
+ set val(name),file(reads) from g22_10_reads0_g37_9
+ val mate from g_1_mate_g37_9
 
 output:
- file "*.html"  into g61_10_outputFileHTML00
- file "*csv" optional true  into g61_10_csvFile11
+ set val(name),file("*_pair-pass.fastq")  into g37_9_reads0_g28_12
+ set val(name),file("out*")  into g37_9_logFile1_g61_0
 
-"""
+script:
+coord = params.Pair_Sequence_post_consensus_pair_seq.coord
+act = params.Pair_Sequence_post_consensus_pair_seq.act
+copy_fields_1 = params.Pair_Sequence_post_consensus_pair_seq.copy_fields_1
+copy_fields_2 = params.Pair_Sequence_post_consensus_pair_seq.copy_fields_2
+failed = params.Pair_Sequence_post_consensus_pair_seq.failed
+nproc = params.Pair_Sequence_post_consensus_pair_seq.nproc
 
-#!/usr/bin/env Rscript 
+if(mate=="pair"){
+	
+	act = (act=="none") ? "" : "--act ${act}"
+	failed = (failed=="true") ? "--failed" : "" 
+	copy_fields_1 = (copy_fields_1=="") ? "" : "--1f ${copy_fields_1}" 
+	copy_fields_2 = (copy_fields_2=="") ? "" : "--2f ${copy_fields_2}"
+	
+	readArray = reads.toString().split(' ')	
+	R1 = readArray[0]
+	R2 = readArray[1]
+	"""
+	PairSeq.py -1 ${R1} -2 ${R2} ${copy_fields_1} ${copy_fields_2} --coord ${coord} ${act} ${failed} >> out_${R1}_PS.log
+	"""
+}else{
+	
+	"""
+	echo -e 'PairSeq works only on pair-end reads.'
+	"""
+}
 
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
 
-"""
 }
 
 
@@ -1409,6 +1044,173 @@ if(mate=="pair"){
 }
 
 
+process Assemble_pairs_align_parse_log_AP {
+
+input:
+ set val(name),file(log_file) from g28_12_logFile1_g28_15
+ val mate from g_1_mate_g28_15
+
+output:
+ file "*table.tab"  into g28_15_logFile0_g28_25, g28_15_logFile0_g28_19
+
+script:
+field_to_parse = params.Assemble_pairs_align_parse_log_AP.field_to_parse
+readArray = log_file.toString()	
+
+"""
+ParseLog.py -l ${readArray}  -f ${field_to_parse}
+"""
+
+
+}
+
+
+process Assemble_pairs_align_report_assemble_pairs {
+
+input:
+ file log_files from g28_15_logFile0_g28_19
+ val matee from g_1_mate_g28_19
+
+output:
+ file "*.rmd"  into g28_19_rMarkdown0_g28_25
+
+
+
+shell:
+
+if(matee=="pair"){
+	readArray = log_files.toString().split(' ')
+	assemble = readArray[0]
+	name = assemble-"_table.tab"
+	'''
+	#!/usr/bin/env perl
+	
+	
+	my $script = <<'EOF';
+	
+	```{r, message=FALSE, echo=FALSE, results="hide"}
+	# Setup
+	library(prestor)
+	library(knitr)
+	library(captioner)
+	
+	if (!exists("tables")) { tables <- captioner(prefix="Table") }
+	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+	figures("assemble_length", "Histogram showing the distribution assembled sequence lengths in 
+	                            nucleotides for the Align step (top) and Reference step (bottom).")
+	figures("assemble_overlap", "Histogram showing the distribution of overlapping nucleotides between 
+	                             mate-pairs for the Align step (top) and Reference step (bottom).
+	                             Negative values for overlap indicate non-overlapping mate-pairs
+	                             with the negative value being the number of gap characters between
+	                             the ends of the two mate-pairs.")
+	figures("assemble_error", "Histograms showing the distribution of paired-end assembly error 
+	                           rates for the Align step (top) and identity to the reference germline 
+	                           for the Reference step (bottom).")
+	figures("assemble_pvalue", "Histograms showing the distribution of significance scores for 
+	                            paired-end assemblies. P-values for the Align mode are shown in the top
+	                            panel. E-values from the Reference step's alignment against the 
+	                            germline sequences are shown in the bottom panel for both input files
+	                            separately.")
+	```
+	
+	```{r, echo=FALSE, warning=FALSE}
+	assemble_log <- loadLogTable(file.path(".", "!{assemble}"))
+	
+	# Subset to align and reference logs
+	align_fields <- c("ERROR", "PVALUE")
+	ref_fields <- c("REFID", "GAP", "EVALUE1", "EVALUE2", "IDENTITY")
+	align_log <- assemble_log[!is.na(assemble_log$ERROR), !(names(assemble_log) %in% ref_fields)]
+	ref_log <- assemble_log[!is.na(assemble_log$REFID), !(names(assemble_log) %in% align_fields)]
+	
+	# Build log set
+	assemble_list <- list()
+	if (nrow(align_log) > 0) { assemble_list[["Align"]] <- align_log }
+	if (nrow(ref_log) > 0) { assemble_list[["Reference"]] <- ref_log }
+	plot_titles <- names(assemble_list)
+	```
+	
+	# Paired-End Assembly
+	
+	Assembly of paired-end reads is performed using the AssemblePairs tool which 
+	determines the read overlap in two steps. First, de novo assembly is attempted 
+	using an exhaustive approach to identify all possible overlaps between the 
+	two reads with alignment error rates and p-values below user-defined thresholds. 
+	This method is denoted as the `Align` method in the following figures. 
+	Second, those reads failing the first stage of de novo assembly are then 
+	mapped to the V-region reference sequences to create a full length sequence, 
+	padding with Ns, for any amplicons that have insufficient overlap for 
+	de novo assembly. This second stage is referred to as the `Reference` step in the
+	figures below.
+	
+	## Assembled sequence lengths
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="length", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+	
+	`r figures("assemble_length")`
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="overlap", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+	
+	`r figures("assemble_overlap")`
+	
+	## Alignment error rates and significance
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="error", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+	
+	`r figures("assemble_error")`
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="pvalue", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+
+	`r figures("assemble_pvalue")`
+
+	EOF
+	
+	open OUT, ">AP_!{name}.rmd";
+	print OUT $script;
+	close OUT;
+	
+	'''
+
+}else{
+	
+	"""
+	echo -e 'AssemblePairs works only on pair-end reads.'
+	"""
+}
+}
+
+
+process Assemble_pairs_align_presto_render_rmarkdown {
+
+input:
+ file rmk from g28_19_rMarkdown0_g28_25
+ file log_file from g28_15_logFile0_g28_25
+
+output:
+ file "*.html"  into g28_25_outputFileHTML00
+ file "*csv" optional true  into g28_25_csvFile11
+
+"""
+
+#!/usr/bin/env Rscript 
+
+rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
+
+"""
+}
+
+
 process Assemble_pairs_reference_assemble_pairs {
 
 input:
@@ -1527,6 +1329,77 @@ if(mate=="pair"){
 	echo -e 'AssemblePairs works only on pair-end reads.'
 	"""
 }
+
+}
+
+
+process parse_headers_collapse_multiple_p11 {
+
+input:
+ set val(name), file(reads) from g73_12_reads0_g_75
+ set val(name2), file(reads2) from g28_12_reads0_g_75
+
+output:
+ set val(name),file("*${out}")  into g_75_fastaFile0_g_72
+
+script:
+method = params.parse_headers_collapse_multiple_p11.method
+act = params.parse_headers_collapse_multiple_p11.act
+args = params.parse_headers_collapse_multiple_p11.args
+
+println reads
+println reads2
+
+readArray = [reads, reads2].join(" ")
+
+println readArray
+
+if(method=="collapse" || method=="copy" || method=="rename" || method=="merge"){
+	out="${name}_Assembled_pass_reheader.fastq"
+	"""
+	ParseHeaders.py  ${method} -s ${readArray} ${args} --act ${act}
+	
+	cat *pass_assemble-pass_reheader.fastq *assemble-fail_assemble-pass_reheader.fastq > ${name}_Assembled_pass_reheader.fastq
+	
+	"""
+}else{
+	if(method=="table"){
+			out=".tab"
+			"""
+			ParseHeaders.py ${method} -s ${readArray} ${args}
+			"""	
+	}else{
+		out="_reheader.fastq"
+		"""
+		ParseHeaders.py ${method} -s ${readArray} ${args}
+		"""		
+	}
+}
+
+
+}
+
+
+process split_constant {
+
+publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /light\/.*.fasta$/) "reads/$filename"}
+publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /heavy\/.*.fasta$/) "reads/$filename"}
+input:
+ set val(name),file(reads) from g_75_fastaFile0_g_72
+
+output:
+ set name, file("light/*.fasta") optional true  into g_72_fastaFile00
+ set name, file("heavy/*.fasta") optional true  into g_72_fastaFile11
+
+script:
+split_col = params.split_constant.split_col
+
+"""
+#!/bin/sh 
+mkdir heavy
+mkdir light
+awk '/^>/{f=""; split(\$0,b,"${split_col}="); if(substr(b[2],1,3)=="IGK"){f="light/${name}_IGK.fasta"} else {if(substr(b[2],1,3)=="IGL"){f="light/${name}_IGL.fasta"} else {f="heavy/${name}.fasta"}}; print \$0 > f ; next } {print \$0 > f} ' ${reads}
+"""
 
 }
 
@@ -1698,210 +1571,268 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 }
 
 
-process parse_headers_collapse_multiple_p11 {
+process make_report_pipeline_cat_all_file {
 
 input:
- set val(name), file(reads) from g73_12_reads0_g_75
- set val(name2), file(reads2) from g28_12_reads0_g_75
+ set val(name), file(log_file) from g37_9_logFile1_g61_0
+ set val(name), file(log_file) from g52_0_logFile3_g61_0
+ set val(name), file(log_file) from g38_11_logFile3_g61_0
+ set val(name), file(log_file) from g70_9_logFile1_g61_0
 
 output:
- set val(name),file("*${out}")  into g_75_fastaFile0_g_72
+ set val(name), file("all_out_file.log")  into g61_0_logFile0_g61_2, g61_0_logFile0_g61_10
 
 script:
-method = params.parse_headers_collapse_multiple_p11.method
-act = params.parse_headers_collapse_multiple_p11.act
-args = params.parse_headers_collapse_multiple_p11.args
+readArray = log_file.toString()
 
-println reads
-println reads2
+"""
 
-readArray = [reads, reads2].join(" ")
+echo $readArray
+cat out* >> all_out_file.log
+"""
 
-println readArray
+}
 
-if(method=="collapse" || method=="copy" || method=="rename" || method=="merge"){
-	out="${name}_Assembled_pass_reheader.fastq"
-	"""
-	ParseHeaders.py  ${method} -s ${readArray} ${args} --act ${act}
+
+process make_report_pipeline_report_pipeline {
+
+input:
+ set val(name), file(log_files) from g61_0_logFile0_g61_2
+
+output:
+ file "*.rmd"  into g61_2_rMarkdown0_g61_10
+
+
+shell:
+
+readArray = log_files.toString().split(' ')
+R1 = readArray[0]
+
+'''
+#!/usr/bin/env perl
+
+
+my $script = <<'EOF';
+
+
+```{r, message=FALSE, echo=FALSE, results="hide"}
+# Setup
+library(prestor)
+library(knitr)
+library(captioner)
+
+plot_titles <- c("Read 1", "Read 2")
+if (!exists("tables")) { tables <- captioner(prefix="Table") }
+if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+tables("count", 
+       "The count of reads that passed and failed each processing step.")
+figures("steps", 
+        paste("The number of reads or read sets retained at each processing step. 
+               Shown as raw counts (top) and percentages of input from the previous 
+               step (bottom). Steps having more than one column display individual values for", 
+              plot_titles[1], "(first column) and", plot_titles[2], "(second column)."))
+```
+
+```{r, echo=FALSE}
+console_log <- loadConsoleLog(file.path(".","!{R1}"))
+```
+
+# Summary of Processing Steps
+
+```{r, echo=FALSE}
+count_df <- plotConsoleLog(console_log, sizing="figure")
+
+df<-count_df[,c("task", "pass", "fail")]
+
+write.csv(df,"pipeline_statistics.csv") 
+```
+
+`r figures("steps")`
+
+```{r, echo=FALSE}
+kable(count_df[c("step", "task", "total", "pass", "fail")],
+      col.names=c("Step", "Task", "Input", "Passed", "Failed"),
+      digits=3)
+```
+
+`r tables("count")`
+
+
+EOF
 	
-	cat *pass_assemble-pass_reheader.fastq *assemble-fail_assemble-pass_reheader.fastq > ${name}_Assembled_pass_reheader.fastq
-	
-	"""
-}else{
-	if(method=="table"){
-			out=".tab"
-			"""
-			ParseHeaders.py ${method} -s ${readArray} ${args}
-			"""	
-	}else{
-		out="_reheader.fastq"
-		"""
-		ParseHeaders.py ${method} -s ${readArray} ${args}
-		"""		
-	}
+open OUT, ">pipeline_statistic_!{name}.rmd";
+print OUT $script;
+close OUT;
+
+'''
 }
 
 
-}
+process make_report_pipeline_presto_render_rmarkdown {
 
-
-process split_constant {
-
-publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /light\/.*.fasta$/) "reads/$filename"}
-publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /heavy\/.*.fasta$/) "reads/$filename"}
 input:
- set val(name),file(reads) from g_75_fastaFile0_g_72
+ file rmk from g61_2_rMarkdown0_g61_10
+ file log_file from g61_0_logFile0_g61_10
 
 output:
- set name, file("light/*.fasta") optional true  into g_72_fastaFile00
- set name, file("heavy/*.fasta") optional true  into g_72_fastaFile11
+ file "*.html"  into g61_10_outputFileHTML00
+ file "*csv" optional true  into g61_10_csvFile11
+
+"""
+
+#!/usr/bin/env Rscript 
+
+rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
+
+"""
+}
+
+
+process Build_Consensus_parse_log_BC {
+
+input:
+ set val(name),file(log_file) from g22_10_logFile1_g22_12
+ val mate from g_1_mate_g22_12
+
+output:
+ file "*table.tab"  into g22_12_logFile0_g22_14, g22_12_logFile0_g22_20
 
 script:
-split_col = params.split_constant.split_col
+readArray = log_file.toString()
 
 """
-#!/bin/sh 
-mkdir heavy
-mkdir light
-awk '/^>/{f=""; split(\$0,b,"${split_col}="); if(substr(b[2],1,3)=="IGK"){f="light/${name}_IGK.fasta"} else {if(substr(b[2],1,3)=="IGL"){f="light/${name}_IGL.fasta"} else {f="heavy/${name}.fasta"}}; print \$0 > f ; next } {print \$0 > f} ' ${reads}
+ParseLog.py -l ${readArray} -f BARCODE SEQCOUNT CONSCOUNT PRCONS PRFREQ ERROR
 """
 
 }
 
 
-process Assemble_pairs_align_parse_log_AP {
+process Build_Consensus_report_Build_Consensus {
 
 input:
- set val(name),file(log_file) from g28_12_logFile1_g28_15
- val mate from g_1_mate_g28_15
+ val matee from g_1_mate_g22_14
+ file log_files from g22_12_logFile0_g22_14
 
 output:
- file "*table.tab"  into g28_15_logFile0_g28_25, g28_15_logFile0_g28_19
+ file "*.rmd"  into g22_14_rMarkdown0_g22_20
 
-script:
-field_to_parse = params.Assemble_pairs_align_parse_log_AP.field_to_parse
-readArray = log_file.toString()	
-
-"""
-ParseLog.py -l ${readArray}  -f ${field_to_parse}
-"""
-
-
-}
-
-
-process Assemble_pairs_align_report_assemble_pairs {
-
-input:
- file log_files from g28_15_logFile0_g28_19
- val matee from g_1_mate_g28_19
-
-output:
- file "*.rmd"  into g28_19_rMarkdown0_g28_25
 
 
 
 shell:
 
 if(matee=="pair"){
-	readArray = log_files.toString().split(' ')
-	assemble = readArray[0]
-	name = assemble-"_table.tab"
+	readArray = log_files.toString().split(' ')	
+	R1 = readArray[0]
+	R2 = readArray[1]
+	name = R1-"_table.tab"
 	'''
 	#!/usr/bin/env perl
 	
 	
 	my $script = <<'EOF';
 	
-	```{r, message=FALSE, echo=FALSE, results="hide"}
+	
+	
+	```{R, message=FALSE, echo=FALSE, results="hide"}
 	# Setup
 	library(prestor)
 	library(knitr)
 	library(captioner)
 	
+	plot_titles <- c("Read 1", "Read 2")
 	if (!exists("tables")) { tables <- captioner(prefix="Table") }
 	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("assemble_length", "Histogram showing the distribution assembled sequence lengths in 
-	                            nucleotides for the Align step (top) and Reference step (bottom).")
-	figures("assemble_overlap", "Histogram showing the distribution of overlapping nucleotides between 
-	                             mate-pairs for the Align step (top) and Reference step (bottom).
-	                             Negative values for overlap indicate non-overlapping mate-pairs
-	                             with the negative value being the number of gap characters between
-	                             the ends of the two mate-pairs.")
-	figures("assemble_error", "Histograms showing the distribution of paired-end assembly error 
-	                           rates for the Align step (top) and identity to the reference germline 
-	                           for the Reference step (bottom).")
-	figures("assemble_pvalue", "Histograms showing the distribution of significance scores for 
-	                            paired-end assemblies. P-values for the Align mode are shown in the top
-	                            panel. E-values from the Reference step's alignment against the 
-	                            germline sequences are shown in the bottom panel for both input files
-	                            separately.")
+	figures("cons_size", 
+	        paste("Histogram of UMI read group sizes (reads per UMI) for",  
+	              plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
+	              "The x-axis indicates the number of reads in a UMI group and the y-axis is the 
+	               number of UMI groups with that size. The Consensus and Total bars are overlayed 
+	               (not stacked) histograms indicating whether the distribution has been calculated 
+	               using the total number of reads (Total) or only those reads used for consensus 
+	               generation (Consensus)."))
+	figures("cons_prfreq", 
+	        paste("Histograms showing the distribution of majority primer frequency for all UMI read groups for",
+	              plot_titles[1], "(top) and", plot_titles[2], "(bottom)."))
+	figures("cons_prsize", 
+	        paste("Violin plots showing the distribution of UMI read group sizes by majority primer for",
+	              plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
+	              "Only groups with majority primer frequency over the PRFREQ threshold set when running
+	               BuildConsensus. Meaning, only retained UMI groups."))
+	figures("cons_error", 
+	        paste("Histogram showing the distribution of UMI read group error rates for",
+	              plot_titles[1], "(top) and", plot_titles[2], "(bottom)."))
+	figures("cons_prerror", 
+	        paste("Violin plots showing the distribution of UMI read group error rates by majority primer for",
+	              plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
+	              "Only groups with majority primer frequency over the PRFREQ threshold set when 
+	               running BuildConsensus. Meaning, only retained UMI groups."))
 	```
+	
+	```{r, echo=FALSE}
+	consensus_log_1 <- loadLogTable(file.path(".", "!{R1}"))
+	consensus_log_2 <- loadLogTable(file.path(".", "!{R2}"))
+	```
+	
+	# Generation of UMI Consensus Sequences
+	
+	Reads sharing the same UMI are collapsed into a single consensus sequence by
+	the BuildConsensus tool. BuildConsensus considers several factors in determining
+	the final consensus sequence, including the number of reads in a UMI group, 
+	Phred quality scores (`Q`), primer annotations, and the number of mismatches 
+	within a UMI group. Quality scores are used to resolve conflicting base calls in
+	a UMI read group and the final consensus sequence is assigned consensus quality 
+	scores derived from the individual base quality scores. The numbers of reads in a UMI
+	group, number of matching primer annotations, and error rate (average base mismatches from 
+	consensus) are used as strict cut-offs for exclusion of erroneous UMI read groups.
+	Additionally, individual reads are excluded whose primer annotation differs from 
+	the majority in cases where there are sufficient number of reads exceeding 
+	the primer consensus cut-off.
+	
+	## Reads per UMI
 	
 	```{r, echo=FALSE, warning=FALSE}
-	assemble_log <- loadLogTable(file.path(".", "!{assemble}"))
-	
-	# Subset to align and reference logs
-	align_fields <- c("ERROR", "PVALUE")
-	ref_fields <- c("REFID", "GAP", "EVALUE1", "EVALUE2", "IDENTITY")
-	align_log <- assemble_log[!is.na(assemble_log$ERROR), !(names(assemble_log) %in% ref_fields)]
-	ref_log <- assemble_log[!is.na(assemble_log$REFID), !(names(assemble_log) %in% align_fields)]
-	
-	# Build log set
-	assemble_list <- list()
-	if (nrow(align_log) > 0) { assemble_list[["Align"]] <- align_log }
-	if (nrow(ref_log) > 0) { assemble_list[["Reference"]] <- ref_log }
-	plot_titles <- names(assemble_list)
+	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
+	                   style="size", sizing="figure")
 	```
 	
-	# Paired-End Assembly
+	`r figures("cons_size")`
 	
-	Assembly of paired-end reads is performed using the AssemblePairs tool which 
-	determines the read overlap in two steps. First, de novo assembly is attempted 
-	using an exhaustive approach to identify all possible overlaps between the 
-	two reads with alignment error rates and p-values below user-defined thresholds. 
-	This method is denoted as the `Align` method in the following figures. 
-	Second, those reads failing the first stage of de novo assembly are then 
-	mapped to the V-region reference sequences to create a full length sequence, 
-	padding with Ns, for any amplicons that have insufficient overlap for 
-	de novo assembly. This second stage is referred to as the `Reference` step in the
-	figures below.
-	
-	## Assembled sequence lengths
+	## UMI read group primer frequencies
 	
 	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="length", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
+	                   style="prfreq", sizing="figure")
 	```
 	
-	`r figures("assemble_length")`
+	`r figures("cons_prfreq")`
 	
 	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="overlap", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
+	                   style="prsize", sizing="figure")
 	```
 	
-	`r figures("assemble_overlap")`
+	`r figures("cons_prsize")`
 	
-	## Alignment error rates and significance
+	## UMI read group error rates
 	
 	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="error", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
+	                   style="error", sizing="figure")
 	```
 	
-	`r figures("assemble_error")`
+	`r figures("cons_error")`
 	
 	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="pvalue", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
+	                   style="prerror", sizing="figure")
 	```
-
-	`r figures("assemble_pvalue")`
-
+	
+	`r figures("cons_prerror")`
+	
 	EOF
 	
-	open OUT, ">AP_!{name}.rmd";
+	open OUT, ">!{name}.rmd";
 	print OUT $script;
 	close OUT;
 	
@@ -1909,22 +1840,92 @@ if(matee=="pair"){
 
 }else{
 	
-	"""
-	echo -e 'AssemblePairs works only on pair-end reads.'
-	"""
+	readArray = log_files.toString().split(' ')
+	R1 = readArray[0]
+	name = R1-"_table.tab"
+	'''
+	#!/usr/bin/env perl
+	
+	
+	my $script = <<'EOF';
+	
+	
+	
+		
+	```{R, message=FALSE, echo=FALSE, results="hide"}
+	# Setup
+	library(prestor)
+	library(knitr)
+	library(captioner)
+	
+	if (!exists("tables")) { tables <- captioner(prefix="Table") }
+	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+	figures("cons_size", "Histogram of UMI read group sizes (reads per UMI). 
+	                      The x-axis indicates the number of reads 
+	                      in a UMI group and the y-axis is the number of UMI groups 
+	                      with that size. The Consensus and Total bars are overlayed
+	                      (not stacked) histograms indicating whether the distribution
+	                      has been calculated using the total number of reads (Total)
+	                      or only those reads used for consensus generation (Consensus).")
+	figures("cons_error", "Histogram showing the distribution of UMI read group error rates.")
+	```
+	
+	```{r, echo=FALSE}
+	consensus_log <- loadLogTable(file.path(".", "!{R1}"))
+	```
+	
+	# Generation of UMI Consensus Sequences
+	
+	Reads sharing the same UMI are collapsed into a single consensus sequence by
+	the BuildConsensus tool. BuildConsensus considers several factors in determining
+	the final consensus sequence, including the number of reads in a UMI group, 
+	Phred quality scores (`Q`), primer annotations, and the number of mismatches 
+	within a UMI group. Quality scores are used to resolve conflicting base calls in
+	a UMI read group and the final consensus sequence is assigned consensus quality 
+	scores derived from the individual base quality scores. The numbers of reads in a UMI
+	group, number of matching primer annotations, and error rate (average base mismatches from 
+	consensus) are used as strict cut-offs for exclusion of erroneous UMI read groups.
+	Additionally, individual reads are excluded whose primer annotation differs from 
+	the majority in cases where there are sufficient number of reads exceeding 
+	the primer consensus cut-off.
+	
+	## Reads per UMI
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plotBuildConsensus(consensus_log, style="size", sizing="figure")
+	```
+	
+	`r figures("cons_size")`
+	
+	## UMI read group error rates
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plotBuildConsensus(consensus_log, style="error", sizing="figure")
+	```
+	
+	`r figures("cons_error")`
+	
+	EOF
+	
+	open OUT, ">!{name}.rmd";
+	print OUT $script;
+	close OUT;
+	
+	'''
 }
+
 }
 
 
-process Assemble_pairs_align_presto_render_rmarkdown {
+process Build_Consensus_presto_render_rmarkdown {
 
 input:
- file rmk from g28_19_rMarkdown0_g28_25
- file log_file from g28_15_logFile0_g28_25
+ file rmk from g22_14_rMarkdown0_g22_20
+ file log_file from g22_12_logFile0_g22_20
 
 output:
- file "*.html"  into g28_25_outputFileHTML00
- file "*csv" optional true  into g28_25_csvFile11
+ file "*.html"  into g22_20_outputFileHTML00
+ file "*csv" optional true  into g22_20_csvFile11
 
 """
 
