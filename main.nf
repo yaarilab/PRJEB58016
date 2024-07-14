@@ -8,7 +8,7 @@ params.metadata.metadata = "${params.projectDir}/tools.json"
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_77;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g22_10;g_1_mate_g22_12;g_1_mate_g22_14}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_77;g_1_mate_g_78;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -573,7 +573,7 @@ input:
  val mate from g_1_mate_g70_9
 
 output:
- set val(name),file("*_pair-pass.fastq")  into g70_9_reads0_g22_10
+ set val(name),file("*_pair-pass.fastq")  into g70_9_reads0_g_78
  set val(name),file("out*")  into g70_9_logFile1_g61_0
 
 script:
@@ -655,32 +655,32 @@ def args_creator_bc(barcode_field, primer_field, act, copy_field, mincount, minq
 }
 
 
-process Build_Consensus_build_consensus {
+process build_consensus {
 
 input:
- set val(name),file(reads) from g70_9_reads0_g22_10
- val mate from g_1_mate_g22_10
+ set val(name),file(reads) from g70_9_reads0_g_78
+ val mate from g_1_mate_g_78
 
 output:
- set val(name),file("*_consensus-pass.fastq")  into g22_10_reads0_g_77
- set val(name),file("BC*")  into g22_10_logFile1_g22_12
- set val(name),file("out*")  into g22_10_logFile22
+ set val(name),file("*_consensus-pass.fastq")  into g_78_reads0_g_77
+ set val(name),file("BC*")  into g_78_logFile11
+ set val(name),file("out*")  into g_78_logFile22
 
 script:
-failed = params.Build_Consensus_build_consensus.failed
-nproc = params.Build_Consensus_build_consensus.nproc
-barcode_field = params.Build_Consensus_build_consensus.barcode_field
-primer_field = params.Build_Consensus_build_consensus.primer_field
-act = params.Build_Consensus_build_consensus.act
-copy_field = params.Build_Consensus_build_consensus.copy_field
-mincount = params.Build_Consensus_build_consensus.mincount
-minqual = params.Build_Consensus_build_consensus.minqual
-minfreq = params.Build_Consensus_build_consensus.minfreq
-maxerror = params.Build_Consensus_build_consensus.maxerror
-prcons = params.Build_Consensus_build_consensus.prcons
-maxgap = params.Build_Consensus_build_consensus.maxgap
-maxdiv = params.Build_Consensus_build_consensus.maxdiv
-dep = params.Build_Consensus_build_consensus.dep
+failed = params.build_consensus.failed
+nproc = params.build_consensus.nproc
+barcode_field = params.build_consensus.barcode_field
+primer_field = params.build_consensus.primer_field
+act = params.build_consensus.act
+copy_field = params.build_consensus.copy_field
+mincount = params.build_consensus.mincount
+minqual = params.build_consensus.minqual
+minfreq = params.build_consensus.minfreq
+maxerror = params.build_consensus.maxerror
+prcons = params.build_consensus.prcons
+maxgap = params.build_consensus.maxgap
+maxdiv = params.build_consensus.maxdiv
+dep = params.build_consensus.dep
 //* @style @condition:{act="none",},{act="min",copy_field},{act="max",copy_field},{act="sum",copy_field},{act="set",copy_field},{act="majority",copy_field} @array:{barcode_field,primer_field,act,copy_field,mincount,minqual,minfreq,maxerror,prcons,maxgap,maxdiv,dep} @multicolumn:{failed,nproc},{barcode_field,primer_field,act,copy_field}, {mincount,minqual,minfreq,maxerror,prcons,maxgap,maxdiv,dep}
 
 args_values_bc = args_creator_bc(barcode_field, primer_field, act, copy_field, mincount, minqual, minfreq, maxerror, prcons, maxgap, maxdiv, dep)
@@ -721,7 +721,7 @@ if(mate=="pair"){
 process PairAwk_P1_copy {
 
 input:
- set val(name), file(reads) from g22_10_reads0_g_77
+ set val(name), file(reads) from g_78_reads0_g_77
  val mate from g_1_mate_g_77
 
 output:
@@ -1076,255 +1076,6 @@ input:
 output:
  file "*.html"  into g28_25_outputFileHTML00
  file "*csv" optional true  into g28_25_csvFile11
-
-"""
-
-#!/usr/bin/env Rscript 
-
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
-
-"""
-}
-
-
-process Build_Consensus_parse_log_BC {
-
-input:
- set val(name),file(log_file) from g22_10_logFile1_g22_12
- val mate from g_1_mate_g22_12
-
-output:
- file "*table.tab"  into g22_12_logFile0_g22_14, g22_12_logFile0_g22_20
-
-script:
-readArray = log_file.toString()
-
-"""
-ParseLog.py -l ${readArray} -f BARCODE SEQCOUNT CONSCOUNT PRCONS PRFREQ ERROR
-"""
-
-}
-
-
-process Build_Consensus_report_Build_Consensus {
-
-input:
- val matee from g_1_mate_g22_14
- file log_files from g22_12_logFile0_g22_14
-
-output:
- file "*.rmd"  into g22_14_rMarkdown0_g22_20
-
-
-
-
-shell:
-
-if(matee=="pair"){
-	readArray = log_files.toString().split(' ')	
-	R1 = readArray[0]
-	R2 = readArray[1]
-	name = R1-"_table.tab"
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	plot_titles <- c("Read 1", "Read 2")
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("cons_size", 
-	        paste("Histogram of UMI read group sizes (reads per UMI) for",  
-	              plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
-	              "The x-axis indicates the number of reads in a UMI group and the y-axis is the 
-	               number of UMI groups with that size. The Consensus and Total bars are overlayed 
-	               (not stacked) histograms indicating whether the distribution has been calculated 
-	               using the total number of reads (Total) or only those reads used for consensus 
-	               generation (Consensus)."))
-	figures("cons_prfreq", 
-	        paste("Histograms showing the distribution of majority primer frequency for all UMI read groups for",
-	              plot_titles[1], "(top) and", plot_titles[2], "(bottom)."))
-	figures("cons_prsize", 
-	        paste("Violin plots showing the distribution of UMI read group sizes by majority primer for",
-	              plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
-	              "Only groups with majority primer frequency over the PRFREQ threshold set when running
-	               BuildConsensus. Meaning, only retained UMI groups."))
-	figures("cons_error", 
-	        paste("Histogram showing the distribution of UMI read group error rates for",
-	              plot_titles[1], "(top) and", plot_titles[2], "(bottom)."))
-	figures("cons_prerror", 
-	        paste("Violin plots showing the distribution of UMI read group error rates by majority primer for",
-	              plot_titles[1], "(top) and", plot_titles[2], "(bottom).",
-	              "Only groups with majority primer frequency over the PRFREQ threshold set when 
-	               running BuildConsensus. Meaning, only retained UMI groups."))
-	```
-	
-	```{r, echo=FALSE}
-	consensus_log_1 <- loadLogTable(file.path(".", "!{R1}"))
-	consensus_log_2 <- loadLogTable(file.path(".", "!{R2}"))
-	```
-	
-	# Generation of UMI Consensus Sequences
-	
-	Reads sharing the same UMI are collapsed into a single consensus sequence by
-	the BuildConsensus tool. BuildConsensus considers several factors in determining
-	the final consensus sequence, including the number of reads in a UMI group, 
-	Phred quality scores (`Q`), primer annotations, and the number of mismatches 
-	within a UMI group. Quality scores are used to resolve conflicting base calls in
-	a UMI read group and the final consensus sequence is assigned consensus quality 
-	scores derived from the individual base quality scores. The numbers of reads in a UMI
-	group, number of matching primer annotations, and error rate (average base mismatches from 
-	consensus) are used as strict cut-offs for exclusion of erroneous UMI read groups.
-	Additionally, individual reads are excluded whose primer annotation differs from 
-	the majority in cases where there are sufficient number of reads exceeding 
-	the primer consensus cut-off.
-	
-	## Reads per UMI
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
-	                   style="size", sizing="figure")
-	```
-	
-	`r figures("cons_size")`
-	
-	## UMI read group primer frequencies
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
-	                   style="prfreq", sizing="figure")
-	```
-	
-	`r figures("cons_prfreq")`
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
-	                   style="prsize", sizing="figure")
-	```
-	
-	`r figures("cons_prsize")`
-	
-	## UMI read group error rates
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
-	                   style="error", sizing="figure")
-	```
-	
-	`r figures("cons_error")`
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log_1, consensus_log_2, titles=plot_titles, 
-	                   style="prerror", sizing="figure")
-	```
-	
-	`r figures("cons_prerror")`
-	
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-
-}else{
-	
-	readArray = log_files.toString().split(' ')
-	R1 = readArray[0]
-	name = R1-"_table.tab"
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	
-		
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("cons_size", "Histogram of UMI read group sizes (reads per UMI). 
-	                      The x-axis indicates the number of reads 
-	                      in a UMI group and the y-axis is the number of UMI groups 
-	                      with that size. The Consensus and Total bars are overlayed
-	                      (not stacked) histograms indicating whether the distribution
-	                      has been calculated using the total number of reads (Total)
-	                      or only those reads used for consensus generation (Consensus).")
-	figures("cons_error", "Histogram showing the distribution of UMI read group error rates.")
-	```
-	
-	```{r, echo=FALSE}
-	consensus_log <- loadLogTable(file.path(".", "!{R1}"))
-	```
-	
-	# Generation of UMI Consensus Sequences
-	
-	Reads sharing the same UMI are collapsed into a single consensus sequence by
-	the BuildConsensus tool. BuildConsensus considers several factors in determining
-	the final consensus sequence, including the number of reads in a UMI group, 
-	Phred quality scores (`Q`), primer annotations, and the number of mismatches 
-	within a UMI group. Quality scores are used to resolve conflicting base calls in
-	a UMI read group and the final consensus sequence is assigned consensus quality 
-	scores derived from the individual base quality scores. The numbers of reads in a UMI
-	group, number of matching primer annotations, and error rate (average base mismatches from 
-	consensus) are used as strict cut-offs for exclusion of erroneous UMI read groups.
-	Additionally, individual reads are excluded whose primer annotation differs from 
-	the majority in cases where there are sufficient number of reads exceeding 
-	the primer consensus cut-off.
-	
-	## Reads per UMI
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log, style="size", sizing="figure")
-	```
-	
-	`r figures("cons_size")`
-	
-	## UMI read group error rates
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plotBuildConsensus(consensus_log, style="error", sizing="figure")
-	```
-	
-	`r figures("cons_error")`
-	
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-}
-
-}
-
-
-process Build_Consensus_presto_render_rmarkdown {
-
-input:
- file rmk from g22_14_rMarkdown0_g22_20
- file log_file from g22_12_logFile0_g22_20
-
-output:
- file "*.html"  into g22_20_outputFileHTML00
- file "*csv" optional true  into g22_20_csvFile11
 
 """
 
