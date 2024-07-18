@@ -450,7 +450,7 @@ input:
  file log_file from g38_9_logFile0_g38_19
 
 output:
- file "*.html"  into g38_19_outputFileHTML00
+ file "*.html" optional true  into g38_19_outputFileHTML00
  file "*csv" optional true  into g38_19_csvFile11
 
 """
@@ -1074,7 +1074,7 @@ input:
  file log_file from g28_15_logFile0_g28_25
 
 output:
- file "*.html"  into g28_25_outputFileHTML00
+ file "*.html" optional true  into g28_25_outputFileHTML00
  file "*csv" optional true  into g28_25_csvFile11
 
 """
@@ -1236,7 +1236,7 @@ input:
  file log_file from g52_1_logFile0_g52_13
 
 output:
- file "*.html"  into g52_13_outputFileHTML00
+ file "*.html" optional true  into g52_13_outputFileHTML00
  file "*csv" optional true  into g52_13_csvFile11
 
 """
@@ -1352,7 +1352,7 @@ input:
  file log_file from g61_0_logFile0_g61_10
 
 output:
- file "*.html"  into g61_10_outputFileHTML00
+ file "*.html" optional true  into g61_10_outputFileHTML00
  file "*csv" optional true  into g61_10_csvFile11
 
 """
@@ -1712,7 +1712,7 @@ input:
  file log_file from g73_15_logFile0_g73_25
 
 output:
- file "*.html"  into g73_25_outputFileHTML00
+ file "*.html" optional true  into g73_25_outputFileHTML00
  file "*csv" optional true  into g73_25_csvFile11
 
 """
