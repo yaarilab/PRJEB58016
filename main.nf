@@ -294,7 +294,7 @@ if(mate=="pair"){
 	
 	"""
 	
-	if  [ "${cluster_tool}" == "usearch" ]; then
+	if  [ "${cluster_tool}" == "usearch"] && ["${cluster_exec}"==""]; then
 		wget -q --show-progress --no-check-certificate https://drive5.com/downloads/usearch${usearch_version}_i86linux32.gz
 		gunzip usearch${usearch_version}_i86linux32.gz
 		chmod +x usearch${usearch_version}_i86linux32
@@ -318,7 +318,7 @@ if(mate=="pair"){
 }else{
 	args_1 = args_values[0]
 	"""
-	if  [ "${cluster_tool}" == "usearch" ]; then
+	if  [ "${cluster_tool}" == "usearch" ] && ["${cluster_exec}"==""]; then
 		wget -q --show-progress --no-check-certificate https://drive5.com/downloads/usearch${usearch_version}_i86linux32.gz
 		gunzip usearch${usearch_version}_i86linux32.gz
 		chmod +x usearch${usearch_version}_i86linux32
