@@ -300,7 +300,9 @@ if(mate=="pair"){
 		chmod +x usearch${usearch_version}_i86linux32
 		mv usearch${usearch_version}_i86linux32 /usr/local/bin/usearch2
 		ce=" --exec /usr/local/bin/usearch2"
+		echo "usearch"
 	else
+		echo "no usearch"
 		if [ "${cluster_exec}" != "" ]; then
 			ce=" --exec ${cluster_exec}"
 			ct=" --cluster ${cluster_tool}"
