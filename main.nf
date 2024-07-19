@@ -273,7 +273,7 @@ end = (end.size==2) ? end : [end[0],end[0]]
 barcode_field = (barcode_field.size==2) ? barcode_field : [barcode_field[0],barcode_field[0]]
 
 def args_values = [];
-[method, failed, cluster_field, ident, length, prefix, set_field, start, end, barcode_field].transpose().each { m, f, cf, i, l, p, sf, s, e, bf -> {
+[method, failed, cluster_field, cluster_exec, ident, length, prefix, set_field, start, end, barcode_field].transpose().each { m, f, cf, ce, i, l, p, sf, s, e, bf -> {
     f = (f=="true") ? "--failed" : ""
     p = (p=="") ? "" : "--prefix ${p}" 
     ce = (ce=="") ? "" : "--exec ${ce}" 
