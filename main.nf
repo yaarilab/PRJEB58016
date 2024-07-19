@@ -265,8 +265,6 @@ cluster_field = (cluster_field.size==2) ? cluster_field : [cluster_field[0],clus
 ident = (ident.size==2) ? ident : [ident[0],ident[0]]
 length = (length.size==2) ? length : [length[0],length[0]]
 prefix = (prefix.size==2) ? prefix : [prefix[0],prefix[0]]
-cluster_tool = (cluster_tool.size==2) ? cluster_tool : [cluster_tool[0],cluster_tool[0]]
-cluster_exec = (cluster_exec.size==2) ? cluster_exec : [cluster_exec[0],cluster_exec[0]]
 set_field = (set_field.size==2) ? set_field : [set_field[0],set_field[0]]
 start = (start.size==2) ? start : [start[0],start[0]]
 end = (end.size==2) ? end : [end[0],end[0]]
