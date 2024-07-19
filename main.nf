@@ -8,7 +8,7 @@ params.metadata.metadata = "${params.projectDir}/tools.json"
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_78;g_1_mate_g_79;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_78;g_1_mate_g_79;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g80_14}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -195,7 +195,7 @@ input:
  val mate from g_1_mate_g_71
 
 output:
- set val(name),file("*_umi-pass.fastq") optional true  into g_71_reads0_g52_0
+ set val(name),file("*_umi-pass.fastq") optional true  into g_71_reads0_g80_14
 
 script:
 umi_field = params.Cluster_UMI_p11.umi_field
@@ -227,6 +227,119 @@ awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${u
 
 
 """
+
+
+}
+
+
+process Cluster_Sets_cluster_sets {
+
+input:
+ set val(name),file(reads) from g_71_reads0_g80_14
+ val mate from g_1_mate_g80_14
+
+output:
+ set val(name),file("*_cluster-pass.fastq")  into g80_14_reads0_g52_0
+ set val(name),file("*_cluster-fail.fastq") optional true  into g80_14_reads_failed11
+
+script:
+method = params.Cluster_Sets_cluster_sets.method
+failed = params.Cluster_Sets_cluster_sets.failed
+nproc = params.Cluster_Sets_cluster_sets.nproc
+cluster_field = params.Cluster_Sets_cluster_sets.cluster_field
+ident = params.Cluster_Sets_cluster_sets.ident
+length = params.Cluster_Sets_cluster_sets.length
+prefix = params.Cluster_Sets_cluster_sets.prefix
+cluster_tool = params.Cluster_Sets_cluster_sets.cluster_tool
+cluster_exec = params.Cluster_Sets_cluster_sets.cluster_exec
+usearch_version = params.Cluster_Sets_cluster_sets.usearch_version
+set_field = params.Cluster_Sets_cluster_sets.set_field
+start = params.Cluster_Sets_cluster_sets.start
+end = params.Cluster_Sets_cluster_sets.end
+barcode_field = params.Cluster_Sets_cluster_sets.barcode_field
+//* @style @condition:{method="set",set_field,start,end},{method="all",start,end},{method="barcode",barcode_field} @array:{method,failed,cluster_field,ident,length,prefix,cluster_tool,cluster_exec,set_field,start,end,barcode_field}  @multicolumn:{method,failed,nproc,cluster_field,ident,length,prefix,cluster_tool,cluster_exec},{set_field,start,end,barcode_field}
+
+method = (method.size==2) ? method : [method[0],method[0]]
+failed = (failed.size==2) ? failed : [failed[0],failed[0]]
+cluster_field = (cluster_field.size==2) ? cluster_field : [cluster_field[0],cluster_field[0]]
+ident = (ident.size==2) ? ident : [ident[0],ident[0]]
+length = (length.size==2) ? length : [length[0],length[0]]
+prefix = (prefix.size==2) ? prefix : [prefix[0],prefix[0]]
+cluster_tool = (cluster_tool.size==2) ? cluster_tool : [cluster_tool[0],cluster_tool[0]]
+cluster_exec = (cluster_exec.size==2) ? cluster_exec : [cluster_exec[0],cluster_exec[0]]
+set_field = (set_field.size==2) ? set_field : [set_field[0],set_field[0]]
+start = (start.size==2) ? start : [start[0],start[0]]
+end = (end.size==2) ? end : [end[0],end[0]]
+barcode_field = (barcode_field.size==2) ? barcode_field : [barcode_field[0],barcode_field[0]]
+
+def args_values = [];
+[method, failed, cluster_field, ident, length, prefix, set_field, start, end, barcode_field].transpose().each { m, f, cf, i, l, p, sf, s, e, bf -> {
+    f = (f=="true") ? "--failed" : ""
+    p = (p=="") ? "" : "--prefix ${p}" 
+    ce = (ce=="") ? "" : "--exec ${ce}" 
+    sf = (m=="set") ? "-f ${sf}" : ""
+    s = (m=="barcode") ? "" : "--start ${s}" 
+    e = (m=="barcode") ? "" : (e=="") ? "" : "--end ${e}" 
+    bf = (m=="barcode") ? "-f ${bf}" : ""
+    args_values.add("${m} ${f} -k ${cf} --ident ${i} --length ${l} ${p} ${sf} ${s} ${e} ${bf}")
+}}
+
+
+if(mate=="pair"){
+	// files
+	readArray = reads.toString().split(' ')	
+	R1 = readArray.grep(~/.*R1.*/)[0]
+	R2 = readArray.grep(~/.*R2.*/)[0]
+	
+	args_1 = args_values[0]
+	args_2 = args_values[1]
+	
+	"""
+	
+	if  [ "${cluster_tool}" == "usearch" ]; then
+		wget -q --show-progress --no-check-certificate https://drive5.com/downloads/usearch${usearch_version}_i86linux32.gz
+		gunzip usearch${usearch_version}_i86linux32.gz
+		chmod +x usearch${usearch_version}_i86linux32
+		mv usearch${usearch_version}_i86linux32 /usr/local/bin/usearch2
+		ce=" --exec /usr/local/bin/usearch2"
+		ct=" --cluster userach"
+	else
+		if [ "${cluster_exec}" != "" ]; then
+			ce=" --exec ${cluster_exec}"
+			ct=" --cluster ${cluster_tool}"
+		else
+			ce=""
+			ct=" --cluster ${cluster_tool}"
+		fi
+	fi
+	
+	
+	ClusterSets.py ${args_1} -s $R1  --nproc ${nproc} \$ce \$ct
+	ClusterSets.py ${args_2} -s $R2  --nproc ${nproc} \$ce \$ct
+	"""
+}else{
+	args_1 = args_values[0]
+	"""
+	if  [ "${cluster_tool}" == "usearch" ]; then
+		wget -q --show-progress --no-check-certificate https://drive5.com/downloads/usearch${usearch_version}_i86linux32.gz
+		gunzip usearch${usearch_version}_i86linux32.gz
+		chmod +x usearch${usearch_version}_i86linux32
+		mv usearch${usearch_version}_i86linux32 /usr/local/bin/usearch2
+		ce=" --exec /usr/local/bin/usearch2"
+		ct=" --cluster userach"
+	else
+		if [ "${cluster_exec}" != "" ]; then
+			ce=" --exec ${cluster_exec}"
+			ct=" --cluster ${cluster_tool}"
+		else
+			ce=""
+			ct=" --cluster ${cluster_tool}"
+		fi
+	fi
+	
+	ClusterSets.py ${args_1} -s $reads --nproc ${nproc} \$ce \$ct
+	"""
+}
 
 
 }
@@ -470,7 +583,7 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 process Align_Sets_align_sets {
 
 input:
- set val(name),file(reads) from g_71_reads0_g52_0
+ set val(name),file(reads) from g80_14_reads0_g52_0
  val mate from g_1_mate_g52_0
 
 output:
