@@ -293,7 +293,6 @@ if(mate=="pair"){
 	args_2 = args_values[1]
 	
 	"""
-	ct = ""
 	
 	if  [ "${cluster_tool}" == "usearch" ]; then
 		wget -q --show-progress --no-check-certificate https://drive5.com/downloads/usearch${usearch_version}_i86linux32.gz
@@ -314,8 +313,8 @@ if(mate=="pair"){
 	
 	ct = ""
 	
-	ClusterSets.py ${args_1} -s $R1  --nproc ${nproc} \$ce \$ct
-	ClusterSets.py ${args_2} -s $R2  --nproc ${nproc} \$ce \$ct
+	ClusterSets.py ${args_1} -s $R1  --nproc ${nproc} \$ce 
+	ClusterSets.py ${args_2} -s $R2  --nproc ${nproc} \$ce 
 	"""
 }else{
 	args_1 = args_values[0]
