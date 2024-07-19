@@ -742,8 +742,8 @@ if(mate=="pair"){
 
 	
 	"""
-	BEGINING1=\$(echo \$R1|awk '{split(\$0,a,".fa");print a[1];}')
-BEGINING2=\$(echo \$R2|awk '{split(\$0,a,".fa");print a[1];}')
+	BEGINING1=\$(echo $R1|awk '{split(\$0,a,".fa");print a[1];}')
+BEGINING2=\$(echo $R2|awk '{split(\$0,a,".fa");print a[1];}')
 awk -v out1="\${BEGINING1}_pair-pass.fastq" -v out2="\${BEGINING2}_pair-pass.fastq" 'NR==FNR{
   if(NR%4==1){
     split(\$0,a,"|");
