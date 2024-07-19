@@ -742,11 +742,11 @@ if(mate=="pair"){
 
 	
 	"""
-	BEGINING1=$(echo $R1|awk '{split($0,a,".fa");print a[1];}')
-BEGINING2=$(echo $R2|awk '{split($0,a,".fa");print a[1];}')
-awk -v out1="${BEGINING1}_pair-pass.fastq" -v out2="${BEGINING2}_pair-pass.fastq" 'NR==FNR{
+	BEGINING1=\$(echo \$R1|awk '{split(\$0,a,".fa");print a[1];}')
+BEGINING2=\$(echo \$R2|awk '{split(\$0,a,".fa");print a[1];}')
+awk -v out1="\${BEGINING1}_pair-pass.fastq" -v out2="\${BEGINING2}_pair-pass.fastq" 'NR==FNR{
   if(NR%4==1){
-    split($0,a,"|");
+    split(\$0,a,"|");
     NAME=a[1];
     split(a[2],b,"=");
     split(a[3],c,"=");
@@ -759,13 +759,13 @@ awk -v out1="${BEGINING1}_pair-pass.fastq" -v out2="${BEGINING2}_pair-pass.fastq
     BARCODE[a[1]]=e[2];
     BARCODE_COUNT[a[1]]=f[2];
   }
-  if(NR%4==2)SEQ[NAME]=$0;
-  if(NR%4==0)QUAL[NAME]=$0;
+  if(NR%4==2)SEQ[NAME]=\$0;
+  if(NR%4==0)QUAL[NAME]=\$0;
   next;
 }
 NR%4==1{
   flag=0;
-  split($0,a,"|");
+  split(\$0,a,"|");
   if(a[1] in SEQ)flag=1;
     split(a[2],b,"=");
     split(a[3],c,"=");
@@ -785,17 +785,17 @@ flag==1{
   }
   if(NR%4==2){
     print SEQ[a[1]] > out1;
-    print $0 > out2;
+    print \$0 > out2;
     next;
   }
   if(NR%4==3){
     print "+" > out1;
-    print $0 > out2;
+    print \$0 > out2;
     next;
   }
   if(NR%4==0){
     print QUAL[a[1]] > out1;
-    print $0 > out2;
+    print \$0 > out2;
     next;
   }
 } ' $R1 $R2
