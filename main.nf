@@ -8,7 +8,7 @@ params.metadata.metadata = "${params.projectDir}/tools.json"
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_77;g_1_mate_g_78;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_78;g_1_mate_g_79;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -662,7 +662,7 @@ input:
  val mate from g_1_mate_g_78
 
 output:
- set val(name),file("*_consensus-pass.fastq")  into g_78_reads0_g_77
+ set val(name),file("*_consensus-pass.fastq")  into g_78_reads0_g_79
  set val(name),file("BC*")  into g_78_logFile11
  set val(name),file("out*")  into g_78_logFile22
 
@@ -718,14 +718,14 @@ if(mate=="pair"){
 }
 
 
-process PairAwk_P1_copy {
+process PairAwk_P11 {
 
 input:
- set val(name), file(reads) from g_78_reads0_g_77
- val mate from g_1_mate_g_77
+ set val(name), file(reads) from g_78_reads0_g_79
+ val mate from g_1_mate_g_79
 
 output:
- set val(name), file("*pair-pass.fastq")  into g_77_reads0_g28_12
+ set val(name), file("*pair-pass.fastq")  into g_79_reads0_g28_12
 
 script:
 
@@ -738,54 +738,63 @@ if(mate=="pair"){
 
 	
 	"""
-	BEGINING1=\$(echo $R1|awk '{split(\$0,a,".fa");print a[1];}')
-	BEGINING2=\$(echo $R2|awk '{split(\$0,a,".fa");print a[1];}')
-	
-	awk -v out1="\${BEGINING1}_pair-pass.fastq" -v out2="\${BEGINING2}_pair-pass.fastq" 'NR==FNR{
-	  if(NR%4==1){
-	    split(\$0,a,"|");
-	    NAME=a[1];
-	    split(a[2],b,"=");
-	    split(a[3],c,"=");
-	    CONSCOUNT[a[1]]=b[2];
-	    PRCONS[a[1]]=c[2];
-	  }
-	  if(NR%4==2)SEQ[NAME]=\$0;
-	  if(NR%4==0)QUAL[NAME]=\$0;
-	  next;
-	}
-	NR%4==1{
-	  flag=0;
-	  split(\$0,a,"|");
-	  if(a[1] in SEQ)flag=1;
-	    split(a[2],b,"=");
-	    split(a[3],c,"=");
-	}
-	flag==1{
-	  if(NR%4==1){
-	    print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "," b[2] "|PRCONS=" PRCONS[a[1]] "," c[2]  > out1;
-	    print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "," b[2] "|PRCONS=" PRCONS[a[1]] "," c[2]  > out2;
-	#     print a[1] "/1|SEQORIENT=" SEQORIENT[a[1]] "," c[2] "|PRIMER=" PRIMER[a[1]] "|" b[4] > out1;
-	#     print a[1] "/2|SEQORIENT=" SEQORIENT[a[1]] "," c[2] "|PRIMER="  d[2] "|" b[4] > out2;
-	    next;
-	  }
-	  if(NR%4==2){
-	    print SEQ[a[1]] > out1;
-	    print \$0 > out2;
-	    next;
-	  }
-	  if(NR%4==3){
-	    print "+" > out1;
-	    print \$0 > out2;
-	    next;
-	  }
-	  if(NR%4==0){
-	    print QUAL[a[1]] > out1;
-	    print \$0 > out2;
-	    next;
-	  }
-
-	} ' $R1 $R2
+	BEGINING1=$(echo $R1|awk '{split($0,a,".fa");print a[1];}')
+BEGINING2=$(echo $R2|awk '{split($0,a,".fa");print a[1];}')
+awk -v out1="${BEGINING1}_pair-pass.fastq" -v out2="${BEGINING2}_pair-pass.fastq" 'NR==FNR{
+  if(NR%4==1){
+    split($0,a,"|");
+    NAME=a[1];
+    split(a[2],b,"=");
+    split(a[3],c,"=");
+    split(a[4],d,"=");
+    split(a[5],e,"=");
+    split(a[6],f,"=");
+    CONSCOUNT[a[1]]=b[2];
+    PRCONS[a[1]]=c[2];
+    PRFREQ[a[1]]=d[2];
+    BARCODE[a[1]]=e[2];
+    BARCODE_COUNT[a[1]]=f[2];
+  }
+  if(NR%4==2)SEQ[NAME]=$0;
+  if(NR%4==0)QUAL[NAME]=$0;
+  next;
+}
+NR%4==1{
+  flag=0;
+  split($0,a,"|");
+  if(a[1] in SEQ)flag=1;
+    split(a[2],b,"=");
+    split(a[3],c,"=");
+    split(a[4],d,"=");
+    split(a[5],e,"=");
+    split(a[6],f,"=");
+}
+flag==1{
+  if(NR%4==1){
+     print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "|PRCONS=" PRCONS[a[1]] "|PRFREQ=" PRFREQ[a[1]] "|BARCODE=" c[2]  > out1;
+     print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "|PRCONS=" PRCONS[a[1]] "|PRFREQ=" PRFREQ[a[1]] "|BARCODE=" c[2]  > out2;
+#    print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "," b[2] "|BARCODE=" c[2] "|BARCODE_COUNT=" BARCODE_COUNT[a[1]] "," d[2] > out1;
+#    print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "," b[2] "|BARCODE=" c[2] "|BARCODE_COUNT=" BARCODE_COUNT[a[1]] "," d[2] > out2;
+#     print a[1] "/1|SEQORIENT=" SEQORIENT[a[1]] "," c[2] "|PRIMER=" PRIMER[a[1]] "|" b[4] > out1;
+#     print a[1] "/2|SEQORIENT=" SEQORIENT[a[1]] "," c[2] "|PRIMER="  d[2] "|" b[4] > out2;
+    next;
+  }
+  if(NR%4==2){
+    print SEQ[a[1]] > out1;
+    print $0 > out2;
+    next;
+  }
+  if(NR%4==3){
+    print "+" > out1;
+    print $0 > out2;
+    next;
+  }
+  if(NR%4==0){
+    print QUAL[a[1]] > out1;
+    print $0 > out2;
+    next;
+  }
+} ' $R1 $R2
 	
 	"""
 }else{
@@ -801,7 +810,7 @@ if(mate=="pair"){
 process Assemble_pairs_align_assemble_pairs {
 
 input:
- set val(name),file(reads) from g_77_reads0_g28_12
+ set val(name),file(reads) from g_79_reads0_g28_12
  val mate from g_1_mate_g28_12
 
 output:
