@@ -375,7 +375,7 @@ SUFFIX = "_primers-pass.fastq_umi-pass"
 	awk 'BEGIN{LARGEST_CLID="";LARGEST_SIZE=0;print "UMI\tLARGEST_CLID\tCLID_SIZE";} 
 		 NR%4==1 {split(\$0,a,"|"); split(a[4],b,"UMI="); UMI=b[2]; split(a[5],c,"CLID="); CLID=c[2];  if(UMI==PREV_UMI || NR==1) {ARR[UMI"_"CLID]+=1; if(ARR[UMI"_"CLID]>LARGEST_SIZE) {LARGEST_SIZE=ARR[UMI"_"CLID]; LARGEST_CLID=CLID} ; if (NR==1) {PREV_UMI=UMI}; next } else { print PREV_UMI"\t"LARGEST_CLID"\t"LARGEST_SIZE; ARR[UMI"_"CLID]+=1; LARGEST_CLID=CLID;LARGEST_SIZE=ARR[UMI"_"CLID]; PREV_UMI=UMI; next }} 
 		 END { print PREV_UMI"\t"LARGEST_CLID"\t"LARGEST_SIZE;} ' \
-		 R1\$TMP1_SUFFIX  > R1}\$TMP2_SUFFIX
+		 R1\$TMP1_SUFFIX  > R1\$TMP2_SUFFIX
 					
 	awk 'NR==FNR && NR>1 {UMI=\$1;CLID=\$2;ID[UMI]=CLID} 
 		 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); split(a[4],b,"UMI="); UMI=b[2]; split(a[5],c,"CLID="); CLID=c[2];  if(CLID==ID[UMI]){flag=1; print}else{flag=0}}
