@@ -365,10 +365,10 @@ SUFFIX = "primers-pass.fastq_umi-pass"
 #!/bin/bash
 
 	PREV_SUFFIX=$SUFFIX
-    SUFFIX=\$(echo $SUFFIX | sed 's/.fastq//')"_cluster-pass.fastq"
-	TMP1_SUFFIX=\$(echo $SUFFIX | sed 's/.fastq//')".ori.fastq"
-    TMP2_SUFFIX=\$(echo $SUFFIX | sed 's/.fastq//')".UMI_TO_CLUSTER.txt"
-    SUFFIX_f=\$(echo $SUFFIX | sed 's/.fastq//')"_cluster-pass_pass.fastq"
+    SUFFIX="primers-pass.fastq_umi-pass_cluster-pass.fastq"
+	TMP1_SUFFIX="primers-pass.fastq_umi-pass_cluster-pass.fastq.ori.fastq"
+    TMP2_SUFFIX="primers-pass.fastq_umi-pass_cluster-pass.fastq.UMI_TO_CLUSTER.txt"
+    SUFFIX_f="primers-pass.fastq_umi-pass_cluster-pass.fastq_cluster-pass_pass.fastq"
 
 	mv $R1$SUFFIX $R1$TMP1_SUFFIX
 	
