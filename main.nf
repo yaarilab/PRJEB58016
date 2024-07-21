@@ -8,7 +8,7 @@ params.metadata.metadata = "${params.projectDir}/tools.json"
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_78;g_1_mate_g_79;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g70_9;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g80_14}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_78;g_1_mate_g_79;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g80_14}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -637,7 +637,7 @@ input:
  val mate from g_1_mate_g52_0
 
 output:
- set val(name),file("*_align-pass.fastq")  into g52_0_reads0_g70_9
+ set val(name),file("*_align-pass.fastq")  into g52_0_reads0_g_78
  set val(name), file("AS_*")  into g52_0_logFile1_g52_1
  set val(name),file("*_align-fail.fastq") optional true  into g52_0_reads_failed22
  set val(name), file("out*") optional true  into g52_0_logFile3_g61_0
@@ -732,48 +732,6 @@ if(mate=="pair"){
 
 }
 
-
-process Pair_Sequence_per_consensus_pair_seq {
-
-input:
- set val(name),file(reads) from g52_0_reads0_g70_9
- val mate from g_1_mate_g70_9
-
-output:
- set val(name),file("*_pair-pass.fastq")  into g70_9_reads0_g_78
- set val(name),file("out*")  into g70_9_logFile1_g61_0
-
-script:
-coord = params.Pair_Sequence_per_consensus_pair_seq.coord
-act = params.Pair_Sequence_per_consensus_pair_seq.act
-copy_fields_1 = params.Pair_Sequence_per_consensus_pair_seq.copy_fields_1
-copy_fields_2 = params.Pair_Sequence_per_consensus_pair_seq.copy_fields_2
-failed = params.Pair_Sequence_per_consensus_pair_seq.failed
-nproc = params.Pair_Sequence_per_consensus_pair_seq.nproc
-
-if(mate=="pair"){
-	
-	act = (act=="none") ? "" : "--act ${act}"
-	failed = (failed=="true") ? "--failed" : "" 
-	copy_fields_1 = (copy_fields_1=="") ? "" : "--1f ${copy_fields_1}" 
-	copy_fields_2 = (copy_fields_2=="") ? "" : "--2f ${copy_fields_2}"
-	
-	readArray = reads.toString().split(' ')	
-	R1 = readArray[0]
-	R2 = readArray[1]
-	"""
-	PairSeq.py -1 ${R1} -2 ${R2} ${copy_fields_1} ${copy_fields_2} --coord ${coord} ${act} ${failed} >> out_${R1}_PS.log
-	"""
-}else{
-	
-	"""
-	echo -e 'PairSeq works only on pair-end reads.'
-	"""
-}
-
-
-}
-
 boolean isCollectionOrArray_bc(object) {    
     [Collection, Object[]].any { it.isAssignableFrom(object.getClass()) }
 }
@@ -825,7 +783,7 @@ def args_creator_bc(barcode_field, primer_field, act, copy_field, mincount, minq
 process build_consensus {
 
 input:
- set val(name),file(reads) from g70_9_reads0_g_78
+ set val(name),file(reads) from g52_0_reads0_g_78
  val mate from g_1_mate_g_78
 
 output:
@@ -1430,7 +1388,6 @@ process make_report_pipeline_cat_all_file {
 input:
  set val(name), file(log_file) from g52_0_logFile3_g61_0
  set val(name), file(log_file) from g38_11_logFile3_g61_0
- set val(name), file(log_file) from g70_9_logFile1_g61_0
 
 output:
  set val(name), file("all_out_file.log")  into g61_0_logFile0_g61_2, g61_0_logFile0_g61_10
