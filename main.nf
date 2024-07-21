@@ -981,9 +981,9 @@ input:
  val mate from g_1_mate_g28_12
 
 output:
- set val(name),file("*_assemble-pass.f*")  into g28_12_reads0_g_75, g28_12_reads0_g73_12
+ set val(name),file("*_assemble-pass.f*")  into g28_12_reads0_g_75
  set val(name),file("AP_*")  into g28_12_logFile1_g28_15
- set val(name),file("*_assemble-fail.f*") optional true  into g28_12_reads_failed22
+ set val(name),file("*_assemble-fail.f*") optional true  into g28_12_reads_failed2_g73_12
  set val(name),file("out*")  into g28_12_logFile33
 
 script:
@@ -1543,7 +1543,7 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 process Assemble_pairs_reference_assemble_pairs {
 
 input:
- set val(name),file(reads) from g28_12_reads0_g73_12
+ set val(name),file(reads) from g28_12_reads_failed2_g73_12
  val mate from g_1_mate_g73_12
 
 output:
