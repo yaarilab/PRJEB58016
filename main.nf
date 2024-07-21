@@ -359,7 +359,7 @@ readArray = reads.toString().split(' ')
 
 R1 = readArray[0]
 R2 = readArray[1]
-$SUFFIX = "primers-pass.fastq_umi-pass"
+SUFFIX = "primers-pass.fastq_umi-pass"
 
 """
 #!/bin/bash
