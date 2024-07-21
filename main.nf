@@ -386,9 +386,9 @@ SUFFIX = "_primers-pass.fastq_umi-pass"
 	sed -i 's/|CLID=/-/' R1\$SUFFIX_f
 	
 	## pair awk between M1S and Z, so cluster-UMI information will be transfered
-	awk 'NR==FNR && NR%4==1 {split(\$0,a,"|"); id=a[1]; split(a[4],b,"UMI="); umi=b[2]; z[id]=umi;} 
-		 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); id=a[1]; header=a[1]"|"a[2]"|"a[3]"|UMI="z[id]; print (header);} 
-		 NR!=FNR && FNR%4!=1 {print}' \
+	awk 'NR==FNR && NR%4==1 {split(\$0,a,"|"); id=a[1]; split(a[3],b,"UMI="); umi=b[2]; z[id]=umi;} 
+		 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); id=a[1]; header=a[1]"|"a[2]"|UMI="z[id]; print (header);} 
+		 NR!=FNR && FNR%4!=1 {print}' 
 		 R1\$SUFFIX_f R2\$SUFFIX > R2\$SUFFIX_f
 
 """
