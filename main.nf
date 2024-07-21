@@ -981,7 +981,7 @@ input:
  val mate from g_1_mate_g28_12
 
 output:
- set val(name),file("*_assemble-pass.f*")  into g28_12_reads0_g_75
+ set val(name),file("*_assemble-pass.f*")  into g28_12_reads0_g_84
  set val(name),file("AP_*")  into g28_12_logFile1_g28_15
  set val(name),file("*_assemble-fail.f*") optional true  into g28_12_reads_failed2_g73_12
  set val(name),file("out*")  into g28_12_logFile33
@@ -1547,7 +1547,7 @@ input:
  val mate from g_1_mate_g73_12
 
 output:
- set val(name),file("*_assemble-pass.f*")  into g73_12_reads0_g_75
+ set val(name),file("*_assemble-pass.f*")  into g73_12_reads0_g_84
  set val(name),file("AP_*")  into g73_12_logFile1_g73_15
  set val(name),file("*_assemble-fail.f*") optional true  into g73_12_reads_failed22
  set val(name),file("out*")  into g73_12_logFile33
@@ -1662,50 +1662,22 @@ if(mate=="pair"){
 }
 
 
-process parse_headers_collapse_multiple_p11 {
+process combine_fasta_p11 {
 
 input:
- set val(name), file(reads) from g73_12_reads0_g_75
- set val(name2), file(reads2) from g28_12_reads0_g_75
+ set val(name),file(reads1) from g28_12_reads0_g_84
+ set val(name),file(reads2) from g73_12_reads0_g_84
 
 output:
- set val(name),file("*${out}")  into g_75_fastaFile0_g_72
+ set val(name),file("R1.f*")  into g_84_fastaFile0_g_72
 
-script:
-method = params.parse_headers_collapse_multiple_p11.method
-act = params.parse_headers_collapse_multiple_p11.act
-args = params.parse_headers_collapse_multiple_p11.args
+"""
+#shell example: 
 
-println reads
-println reads2
+#!/bin/sh 
 
-readArray = [reads, reads2].join(" ")
-
-println readArray
-
-if(method=="collapse" || method=="copy" || method=="rename" || method=="merge"){
-	out="${name}_Assembled_pass_reheader.fastq"
-	"""
-	ParseHeaders.py  ${method} -s ${readArray} ${args} --act ${act}
-	
-	cat *pass_assemble-pass_reheader.fastq *assemble-fail_assemble-pass_reheader.fastq > ${name}_Assembled_pass_reheader.fastq
-	
-	"""
-}else{
-	if(method=="table"){
-			out=".tab"
-			"""
-			ParseHeaders.py ${method} -s ${readArray} ${args}
-			"""	
-	}else{
-		out="_reheader.fastq"
-		"""
-		ParseHeaders.py ${method} -s ${readArray} ${args}
-		"""		
-	}
-}
-
-
+cat ${reads1} ${reads2} > R1.fasta
+"""
 }
 
 
@@ -1714,7 +1686,7 @@ process split_constant {
 publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /light\/.*.fasta$/) "reads/$filename"}
 publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /heavy\/.*.fasta$/) "reads/$filename"}
 input:
- set val(name),file(reads) from g_75_fastaFile0_g_72
+ set val(name),file(reads) from g_84_fastaFile0_g_72
 
 output:
  set name, file("light/*.fasta") optional true  into g_72_fastaFile00
