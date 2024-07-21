@@ -349,7 +349,7 @@ input:
  set val(name),file(reads) from g80_14_reads0_g_81
 
 output:
- set val(name),file("*_cluster-pass_pass.fastq")  into g_81_reads00
+ set val(name),file("*_cluster-pass_pass.fastq")  into g_81_reads0_g52_0
 
 //groovy example: 
 
@@ -631,6 +631,7 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 process Align_Sets_align_sets {
 
 input:
+ set val(name),file(reads) from g_81_reads0_g52_0
  val mate from g_1_mate_g52_0
 
 output:
