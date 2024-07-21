@@ -353,6 +353,8 @@ output:
 
 //groovy example: 
 
+script:
+
 readArray = reads.toString().split(' ')	
 
 R1 = readArray[0]
