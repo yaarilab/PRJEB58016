@@ -359,37 +359,37 @@ readArray = reads.toString().split(' ')
 
 R1 = readArray[0]
 R2 = readArray[1]
-SUFFIX = "primers-pass.fastq_umi-pass"
+SUFFIX = "_primers-pass.fastq_umi-pass"
 
 """
 #!/bin/bash
 
-	PREV_SUFFIX=$SUFFIX
-    SUFFIX="primers-pass.fastq_umi-pass_cluster-pass.fastq"
-	TMP1_SUFFIX="primers-pass.fastq_umi-pass_cluster-pass.fastq.ori.fastq"
-    TMP2_SUFFIX="primers-pass.fastq_umi-pass_cluster-pass.fastq.UMI_TO_CLUSTER.txt"
-    SUFFIX_f="primers-pass.fastq_umi-pass_cluster-pass.fastq_cluster-pass_pass.fastq"
+	PREV_SUFFIX=${SUFFIX}
+    SUFFIX="_primers-pass.fastq_umi-pass_cluster-pass.fastq"
+	TMP1_SUFFIX="_primers-pass.fastq_umi-pass_cluster-pass.fastq.ori.fastq"
+    TMP2_SUFFIX="_primers-pass.fastq_umi-pass_cluster-pass.fastq.UMI_TO_CLUSTER.txt"
+    SUFFIX_f="_primers-pass.fastq_umi-pass_cluster-pass.fastq_cluster-pass_pass.fastq"
 
-	mv $R1$SUFFIX $R1$TMP1_SUFFIX
+	mv R1\$SUFFIX R1\$TMP1_SUFFIX
 	
 	awk 'BEGIN{LARGEST_CLID="";LARGEST_SIZE=0;print "UMI\tLARGEST_CLID\tCLID_SIZE";} 
 		 NR%4==1 {split(\$0,a,"|"); split(a[4],b,"UMI="); UMI=b[2]; split(a[5],c,"CLID="); CLID=c[2];  if(UMI==PREV_UMI || NR==1) {ARR[UMI"_"CLID]+=1; if(ARR[UMI"_"CLID]>LARGEST_SIZE) {LARGEST_SIZE=ARR[UMI"_"CLID]; LARGEST_CLID=CLID} ; if (NR==1) {PREV_UMI=UMI}; next } else { print PREV_UMI"\t"LARGEST_CLID"\t"LARGEST_SIZE; ARR[UMI"_"CLID]+=1; LARGEST_CLID=CLID;LARGEST_SIZE=ARR[UMI"_"CLID]; PREV_UMI=UMI; next }} 
 		 END { print PREV_UMI"\t"LARGEST_CLID"\t"LARGEST_SIZE;} ' \
-		 $R1$TMP1_SUFFIX  > $R1$LIB$TMP2_SUFFIX
+		 R1\$TMP1_SUFFIX  > R1}\$TMP2_SUFFIX
 					
 	awk 'NR==FNR && NR>1 {UMI=\$1;CLID=\$2;ID[UMI]=CLID} 
 		 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); split(a[4],b,"UMI="); UMI=b[2]; split(a[5],c,"CLID="); CLID=c[2];  if(CLID==ID[UMI]){flag=1; print}else{flag=0}}
 		 NR!=FNR && FNR%4!=1 && flag==1 {print}' \
-		 $R1$TMP2_SUFFIX $R1$TMP1_SUFFIX > $R1$SUFFIX_f
+		 R1}\$TMP2_SUFFIX R1\$TMP1_SUFFIX > R1\$SUFFIX_f
 			 
 	# combine cluster and UMI fields
-	sed -i 's/|CLID=/-/' $R1$SUFFIX
+	sed -i 's/|CLID=/-/' R1\$SUFFIX_f
 	
 	## pair awk between M1S and Z, so cluster-UMI information will be transfered
 	awk 'NR==FNR && NR%4==1 {split(\$0,a,"|"); id=a[1]; split(a[4],b,"UMI="); umi=b[2]; z[id]=umi;} 
 		 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); id=a[1]; header=a[1]"|"a[2]"|"a[3]"|UMI="z[id]; print (header);} 
 		 NR!=FNR && FNR%4!=1 {print}' \
-		 $R1$SUFFIX $R2$PREV_SUFFIX > $R1$SUFFIX_f
+		 R1\$SUFFIX_f R2\$SUFFIX > R2\$SUFFIX_f
 
 """
 }
