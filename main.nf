@@ -974,7 +974,7 @@ flag==1{
 }
 
 
-process Assemble_pairs_assemble_pairs {
+process Assemble_pairs_align_assemble_pairs {
 
 input:
  set val(name),file(reads) from g_79_reads0_g28_12
@@ -987,30 +987,30 @@ output:
  set val(name),file("out*")  into g28_12_logFile33
 
 script:
-method = params.Assemble_pairs_assemble_pairs.method
-coord = params.Assemble_pairs_assemble_pairs.coord
-rc = params.Assemble_pairs_assemble_pairs.rc
-head_fields_R1 = params.Assemble_pairs_assemble_pairs.head_fields_R1
-head_fields_R2 = params.Assemble_pairs_assemble_pairs.head_fields_R2
-failed = params.Assemble_pairs_assemble_pairs.failed
-fasta = params.Assemble_pairs_assemble_pairs.fasta
-nproc = params.Assemble_pairs_assemble_pairs.nproc
-alpha = params.Assemble_pairs_assemble_pairs.alpha
-maxerror = params.Assemble_pairs_assemble_pairs.maxerror
-minlen = params.Assemble_pairs_assemble_pairs.minlen
-maxlen = params.Assemble_pairs_assemble_pairs.maxlen
-scanrev = params.Assemble_pairs_assemble_pairs.scanrev
-minident = params.Assemble_pairs_assemble_pairs.minident
-evalue = params.Assemble_pairs_assemble_pairs.evalue
-maxhits = params.Assemble_pairs_assemble_pairs.maxhits
-fill = params.Assemble_pairs_assemble_pairs.fill
-aligner = params.Assemble_pairs_assemble_pairs.aligner
-// align_exec = params.Assemble_pairs_assemble_pairs.// align_exec
-// dbexec = params.Assemble_pairs_assemble_pairs.// dbexec
-gap = params.Assemble_pairs_assemble_pairs.gap
-usearch_version = params.Assemble_pairs_assemble_pairs.usearch_version
-assemble_reference = params.Assemble_pairs_assemble_pairs.assemble_reference
-head_seqeunce_file = params.Assemble_pairs_assemble_pairs.head_seqeunce_file
+method = params.Assemble_pairs_align_assemble_pairs.method
+coord = params.Assemble_pairs_align_assemble_pairs.coord
+rc = params.Assemble_pairs_align_assemble_pairs.rc
+head_fields_R1 = params.Assemble_pairs_align_assemble_pairs.head_fields_R1
+head_fields_R2 = params.Assemble_pairs_align_assemble_pairs.head_fields_R2
+failed = params.Assemble_pairs_align_assemble_pairs.failed
+fasta = params.Assemble_pairs_align_assemble_pairs.fasta
+nproc = params.Assemble_pairs_align_assemble_pairs.nproc
+alpha = params.Assemble_pairs_align_assemble_pairs.alpha
+maxerror = params.Assemble_pairs_align_assemble_pairs.maxerror
+minlen = params.Assemble_pairs_align_assemble_pairs.minlen
+maxlen = params.Assemble_pairs_align_assemble_pairs.maxlen
+scanrev = params.Assemble_pairs_align_assemble_pairs.scanrev
+minident = params.Assemble_pairs_align_assemble_pairs.minident
+evalue = params.Assemble_pairs_align_assemble_pairs.evalue
+maxhits = params.Assemble_pairs_align_assemble_pairs.maxhits
+fill = params.Assemble_pairs_align_assemble_pairs.fill
+aligner = params.Assemble_pairs_align_assemble_pairs.aligner
+// align_exec = params.Assemble_pairs_align_assemble_pairs.// align_exec
+// dbexec = params.Assemble_pairs_align_assemble_pairs.// dbexec
+gap = params.Assemble_pairs_align_assemble_pairs.gap
+usearch_version = params.Assemble_pairs_align_assemble_pairs.usearch_version
+assemble_reference = params.Assemble_pairs_align_assemble_pairs.assemble_reference
+head_seqeunce_file = params.Assemble_pairs_align_assemble_pairs.head_seqeunce_file
 //* @style @condition:{method="align",alpha,maxerror,minlen,maxlen,scanrev}, {method="sequential",alpha,maxerror,minlen,maxlen,scanrev,ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec} {method="reference",ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec} {method="join",gap} @multicolumn:{method,coord,rc,head_fields_R1,head_fields_R2,failed,nrpoc,usearch_version},{alpha,maxerror,minlen,maxlen,scanrev}, {ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec}, {gap} 
 
 // args
@@ -1373,7 +1373,7 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 }
 
 
-process Assemble_pairs_parse_log_AP {
+process Assemble_pairs_align_parse_log_AP {
 
 input:
  set val(name),file(log_file) from g28_12_logFile1_g28_15
@@ -1383,7 +1383,7 @@ output:
  file "*table.tab"  into g28_15_logFile0_g28_25, g28_15_logFile0_g28_19
 
 script:
-field_to_parse = params.Assemble_pairs_parse_log_AP.field_to_parse
+field_to_parse = params.Assemble_pairs_align_parse_log_AP.field_to_parse
 readArray = log_file.toString()	
 
 """
@@ -1394,7 +1394,7 @@ ParseLog.py -l ${readArray}  -f ${field_to_parse}
 }
 
 
-process Assemble_pairs_report_assemble_pairs {
+process Assemble_pairs_align_report_assemble_pairs {
 
 input:
  file log_files from g28_15_logFile0_g28_19
@@ -1520,7 +1520,7 @@ if(matee=="pair"){
 }
 
 
-process Assemble_pairs_presto_render_rmarkdown {
+process Assemble_pairs_align_presto_render_rmarkdown {
 
 input:
  file rmk from g28_19_rMarkdown0_g28_25
@@ -1540,7 +1540,7 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 }
 
 
-process Assemble_pairs_assemble_pairs {
+process Assemble_pairs_reference_assemble_pairs {
 
 input:
  val mate from g_1_mate_g73_12
@@ -1552,30 +1552,30 @@ output:
  set val(name),file("out*")  into g73_12_logFile33
 
 script:
-method = params.Assemble_pairs_assemble_pairs.method
-coord = params.Assemble_pairs_assemble_pairs.coord
-rc = params.Assemble_pairs_assemble_pairs.rc
-head_fields_R1 = params.Assemble_pairs_assemble_pairs.head_fields_R1
-head_fields_R2 = params.Assemble_pairs_assemble_pairs.head_fields_R2
-failed = params.Assemble_pairs_assemble_pairs.failed
-fasta = params.Assemble_pairs_assemble_pairs.fasta
-nproc = params.Assemble_pairs_assemble_pairs.nproc
-alpha = params.Assemble_pairs_assemble_pairs.alpha
-maxerror = params.Assemble_pairs_assemble_pairs.maxerror
-minlen = params.Assemble_pairs_assemble_pairs.minlen
-maxlen = params.Assemble_pairs_assemble_pairs.maxlen
-scanrev = params.Assemble_pairs_assemble_pairs.scanrev
-minident = params.Assemble_pairs_assemble_pairs.minident
-evalue = params.Assemble_pairs_assemble_pairs.evalue
-maxhits = params.Assemble_pairs_assemble_pairs.maxhits
-fill = params.Assemble_pairs_assemble_pairs.fill
-aligner = params.Assemble_pairs_assemble_pairs.aligner
-// align_exec = params.Assemble_pairs_assemble_pairs.// align_exec
-// dbexec = params.Assemble_pairs_assemble_pairs.// dbexec
-gap = params.Assemble_pairs_assemble_pairs.gap
-usearch_version = params.Assemble_pairs_assemble_pairs.usearch_version
-assemble_reference = params.Assemble_pairs_assemble_pairs.assemble_reference
-head_seqeunce_file = params.Assemble_pairs_assemble_pairs.head_seqeunce_file
+method = params.Assemble_pairs_reference_assemble_pairs.method
+coord = params.Assemble_pairs_reference_assemble_pairs.coord
+rc = params.Assemble_pairs_reference_assemble_pairs.rc
+head_fields_R1 = params.Assemble_pairs_reference_assemble_pairs.head_fields_R1
+head_fields_R2 = params.Assemble_pairs_reference_assemble_pairs.head_fields_R2
+failed = params.Assemble_pairs_reference_assemble_pairs.failed
+fasta = params.Assemble_pairs_reference_assemble_pairs.fasta
+nproc = params.Assemble_pairs_reference_assemble_pairs.nproc
+alpha = params.Assemble_pairs_reference_assemble_pairs.alpha
+maxerror = params.Assemble_pairs_reference_assemble_pairs.maxerror
+minlen = params.Assemble_pairs_reference_assemble_pairs.minlen
+maxlen = params.Assemble_pairs_reference_assemble_pairs.maxlen
+scanrev = params.Assemble_pairs_reference_assemble_pairs.scanrev
+minident = params.Assemble_pairs_reference_assemble_pairs.minident
+evalue = params.Assemble_pairs_reference_assemble_pairs.evalue
+maxhits = params.Assemble_pairs_reference_assemble_pairs.maxhits
+fill = params.Assemble_pairs_reference_assemble_pairs.fill
+aligner = params.Assemble_pairs_reference_assemble_pairs.aligner
+// align_exec = params.Assemble_pairs_reference_assemble_pairs.// align_exec
+// dbexec = params.Assemble_pairs_reference_assemble_pairs.// dbexec
+gap = params.Assemble_pairs_reference_assemble_pairs.gap
+usearch_version = params.Assemble_pairs_reference_assemble_pairs.usearch_version
+assemble_reference = params.Assemble_pairs_reference_assemble_pairs.assemble_reference
+head_seqeunce_file = params.Assemble_pairs_reference_assemble_pairs.head_seqeunce_file
 //* @style @condition:{method="align",alpha,maxerror,minlen,maxlen,scanrev}, {method="sequential",alpha,maxerror,minlen,maxlen,scanrev,ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec} {method="reference",ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec} {method="join",gap} @multicolumn:{method,coord,rc,head_fields_R1,head_fields_R2,failed,nrpoc,usearch_version},{alpha,maxerror,minlen,maxlen,scanrev}, {ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec}, {gap} 
 
 // args
@@ -1732,7 +1732,7 @@ awk '/^>/{f=""; split(\$0,b,"${split_col}="); if(substr(b[2],1,3)=="IGK"){f="lig
 }
 
 
-process Assemble_pairs_parse_log_AP {
+process Assemble_pairs_reference_parse_log_AP {
 
 input:
  set val(name),file(log_file) from g73_12_logFile1_g73_15
@@ -1742,7 +1742,7 @@ output:
  file "*table.tab"  into g73_15_logFile0_g73_25, g73_15_logFile0_g73_19
 
 script:
-field_to_parse = params.Assemble_pairs_parse_log_AP.field_to_parse
+field_to_parse = params.Assemble_pairs_reference_parse_log_AP.field_to_parse
 readArray = log_file.toString()	
 
 """
@@ -1753,7 +1753,7 @@ ParseLog.py -l ${readArray}  -f ${field_to_parse}
 }
 
 
-process Assemble_pairs_report_assemble_pairs {
+process Assemble_pairs_reference_report_assemble_pairs {
 
 input:
  file log_files from g73_15_logFile0_g73_19
@@ -1879,7 +1879,7 @@ if(matee=="pair"){
 }
 
 
-process Assemble_pairs_presto_render_rmarkdown {
+process Assemble_pairs_reference_presto_render_rmarkdown {
 
 input:
  file rmk from g73_19_rMarkdown0_g73_25
