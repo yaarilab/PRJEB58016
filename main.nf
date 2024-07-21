@@ -387,7 +387,7 @@ SUFFIX = "_primers-pass.fastq_umi-pass"
 	
 	## pair awk between M1S and Z, so cluster-UMI information will be transfered
 	awk 'NR==FNR && NR%4==1 {split(\$0,a,"|"); id=a[1]; split(a[3],b,"UMI="); umi=b[2]; z[id]=umi;} 
-		 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); id=a[1]; header=a[1]"|"a[2]"|UMI="z[id]; print (header);} 
+		 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); id=a[1]; header=a[1]"|"a[2]"|"a[4]"|UMI="z[id]; print (header);} 
 		 NR!=FNR && FNR%4!=1 {print}' \
 		 R1\$SUFFIX_f R2\$SUFFIX > R2\$SUFFIX_f
 
@@ -637,7 +637,7 @@ input:
  val mate from g_1_mate_g52_0
 
 output:
- set val(name),file("*_align-pass.fastq")  into g52_0_reads0_g_78
+ set val(name),file("*_align-pass.fastq")  into g52_0_reads0_g82_9
  set val(name), file("AS_*")  into g52_0_logFile1_g52_1
  set val(name),file("*_align-fail.fastq") optional true  into g52_0_reads_failed22
  set val(name), file("out*") optional true  into g52_0_logFile3_g61_0
@@ -732,6 +732,47 @@ if(mate=="pair"){
 
 }
 
+
+process Pair_Sequence_per_consensus_pair_seq {
+
+input:
+ set val(name),file(reads) from g52_0_reads0_g82_9
+
+output:
+ set val(name),file("*_pair-pass.fastq")  into g82_9_reads0_g_78
+ set val(name),file("out*")  into g82_9_logFile11
+
+script:
+coord = params.Pair_Sequence_per_consensus_pair_seq.coord
+act = params.Pair_Sequence_per_consensus_pair_seq.act
+copy_fields_1 = params.Pair_Sequence_per_consensus_pair_seq.copy_fields_1
+copy_fields_2 = params.Pair_Sequence_per_consensus_pair_seq.copy_fields_2
+failed = params.Pair_Sequence_per_consensus_pair_seq.failed
+nproc = params.Pair_Sequence_per_consensus_pair_seq.nproc
+
+if(mate=="pair"){
+	
+	act = (act=="none") ? "" : "--act ${act}"
+	failed = (failed=="true") ? "--failed" : "" 
+	copy_fields_1 = (copy_fields_1=="") ? "" : "--1f ${copy_fields_1}" 
+	copy_fields_2 = (copy_fields_2=="") ? "" : "--2f ${copy_fields_2}"
+	
+	readArray = reads.toString().split(' ')	
+	R1 = readArray[0]
+	R2 = readArray[1]
+	"""
+	PairSeq.py -1 ${R1} -2 ${R2} ${copy_fields_1} ${copy_fields_2} --coord ${coord} ${act} ${failed} >> out_${R1}_PS.log
+	"""
+}else{
+	
+	"""
+	echo -e 'PairSeq works only on pair-end reads.'
+	"""
+}
+
+
+}
+
 boolean isCollectionOrArray_bc(object) {    
     [Collection, Object[]].any { it.isAssignableFrom(object.getClass()) }
 }
@@ -783,7 +824,7 @@ def args_creator_bc(barcode_field, primer_field, act, copy_field, mincount, minq
 process build_consensus {
 
 input:
- set val(name),file(reads) from g52_0_reads0_g_78
+ set val(name),file(reads) from g82_9_reads0_g_78
  val mate from g_1_mate_g_78
 
 output:
