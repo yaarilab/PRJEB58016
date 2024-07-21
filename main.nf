@@ -8,7 +8,7 @@ params.metadata.metadata = "${params.projectDir}/tools.json"
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_78;g_1_mate_g_79;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g80_14}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_78;g_1_mate_g_79;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g80_14;g_1_mate_g82_9}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -737,6 +737,7 @@ process Pair_Sequence_per_consensus_pair_seq {
 
 input:
  set val(name),file(reads) from g52_0_reads0_g82_9
+ val mate from g_1_mate_g82_9
 
 output:
  set val(name),file("*_pair-pass.fastq")  into g82_9_reads0_g_78
