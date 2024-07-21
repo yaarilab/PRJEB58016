@@ -8,7 +8,7 @@ params.metadata.metadata = "${params.projectDir}/tools.json"
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_78;g_1_mate_g_79;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g73_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g28_12;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g80_14;g_1_mate_g82_9}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_71;g_1_mate_g_78;g_1_mate_g_79;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g52_0;g_1_mate_g52_1;g_1_mate_g52_8;g_1_mate_g80_14;g_1_mate_g82_9;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g28_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g73_12}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -974,7 +974,7 @@ flag==1{
 }
 
 
-process Assemble_pairs_align_assemble_pairs {
+process Assemble_pairs_assemble_pairs {
 
 input:
  set val(name),file(reads) from g_79_reads0_g28_12
@@ -983,34 +983,34 @@ input:
 output:
  set val(name),file("*_assemble-pass.f*")  into g28_12_reads0_g_75
  set val(name),file("AP_*")  into g28_12_logFile1_g28_15
- set val(name),file("*_assemble-fail.f*") optional true  into g28_12_reads_failed2_g73_12
+ set val(name),file("*_assemble-fail.f*") optional true  into g28_12_reads_failed22
  set val(name),file("out*")  into g28_12_logFile33
 
 script:
-method = params.Assemble_pairs_align_assemble_pairs.method
-coord = params.Assemble_pairs_align_assemble_pairs.coord
-rc = params.Assemble_pairs_align_assemble_pairs.rc
-head_fields_R1 = params.Assemble_pairs_align_assemble_pairs.head_fields_R1
-head_fields_R2 = params.Assemble_pairs_align_assemble_pairs.head_fields_R2
-failed = params.Assemble_pairs_align_assemble_pairs.failed
-fasta = params.Assemble_pairs_align_assemble_pairs.fasta
-nproc = params.Assemble_pairs_align_assemble_pairs.nproc
-alpha = params.Assemble_pairs_align_assemble_pairs.alpha
-maxerror = params.Assemble_pairs_align_assemble_pairs.maxerror
-minlen = params.Assemble_pairs_align_assemble_pairs.minlen
-maxlen = params.Assemble_pairs_align_assemble_pairs.maxlen
-scanrev = params.Assemble_pairs_align_assemble_pairs.scanrev
-minident = params.Assemble_pairs_align_assemble_pairs.minident
-evalue = params.Assemble_pairs_align_assemble_pairs.evalue
-maxhits = params.Assemble_pairs_align_assemble_pairs.maxhits
-fill = params.Assemble_pairs_align_assemble_pairs.fill
-aligner = params.Assemble_pairs_align_assemble_pairs.aligner
-// align_exec = params.Assemble_pairs_align_assemble_pairs.// align_exec
-// dbexec = params.Assemble_pairs_align_assemble_pairs.// dbexec
-gap = params.Assemble_pairs_align_assemble_pairs.gap
-usearch_version = params.Assemble_pairs_align_assemble_pairs.usearch_version
-assemble_reference = params.Assemble_pairs_align_assemble_pairs.assemble_reference
-head_seqeunce_file = params.Assemble_pairs_align_assemble_pairs.head_seqeunce_file
+method = params.Assemble_pairs_assemble_pairs.method
+coord = params.Assemble_pairs_assemble_pairs.coord
+rc = params.Assemble_pairs_assemble_pairs.rc
+head_fields_R1 = params.Assemble_pairs_assemble_pairs.head_fields_R1
+head_fields_R2 = params.Assemble_pairs_assemble_pairs.head_fields_R2
+failed = params.Assemble_pairs_assemble_pairs.failed
+fasta = params.Assemble_pairs_assemble_pairs.fasta
+nproc = params.Assemble_pairs_assemble_pairs.nproc
+alpha = params.Assemble_pairs_assemble_pairs.alpha
+maxerror = params.Assemble_pairs_assemble_pairs.maxerror
+minlen = params.Assemble_pairs_assemble_pairs.minlen
+maxlen = params.Assemble_pairs_assemble_pairs.maxlen
+scanrev = params.Assemble_pairs_assemble_pairs.scanrev
+minident = params.Assemble_pairs_assemble_pairs.minident
+evalue = params.Assemble_pairs_assemble_pairs.evalue
+maxhits = params.Assemble_pairs_assemble_pairs.maxhits
+fill = params.Assemble_pairs_assemble_pairs.fill
+aligner = params.Assemble_pairs_assemble_pairs.aligner
+// align_exec = params.Assemble_pairs_assemble_pairs.// align_exec
+// dbexec = params.Assemble_pairs_assemble_pairs.// dbexec
+gap = params.Assemble_pairs_assemble_pairs.gap
+usearch_version = params.Assemble_pairs_assemble_pairs.usearch_version
+assemble_reference = params.Assemble_pairs_assemble_pairs.assemble_reference
+head_seqeunce_file = params.Assemble_pairs_assemble_pairs.head_seqeunce_file
 //* @style @condition:{method="align",alpha,maxerror,minlen,maxlen,scanrev}, {method="sequential",alpha,maxerror,minlen,maxlen,scanrev,ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec} {method="reference",ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec} {method="join",gap} @multicolumn:{method,coord,rc,head_fields_R1,head_fields_R2,failed,nrpoc,usearch_version},{alpha,maxerror,minlen,maxlen,scanrev}, {ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec}, {gap} 
 
 // args
@@ -1057,7 +1057,7 @@ if(mate=="pair"){
 	R1 = readArray[0]
 	R2 = readArray[1]
 	
-	if(R1.contains("."+head_seqeunce_file)){
+	if(R1.contains(""+head_seqeunce_file)){
 		R1 = readArray[0]
 		R2 = readArray[1]
 	}else{
@@ -1093,173 +1093,6 @@ if(mate=="pair"){
 	"""
 }
 
-}
-
-
-process Assemble_pairs_align_parse_log_AP {
-
-input:
- set val(name),file(log_file) from g28_12_logFile1_g28_15
- val mate from g_1_mate_g28_15
-
-output:
- file "*table.tab"  into g28_15_logFile0_g28_25, g28_15_logFile0_g28_19
-
-script:
-field_to_parse = params.Assemble_pairs_align_parse_log_AP.field_to_parse
-readArray = log_file.toString()	
-
-"""
-ParseLog.py -l ${readArray}  -f ${field_to_parse}
-"""
-
-
-}
-
-
-process Assemble_pairs_align_report_assemble_pairs {
-
-input:
- file log_files from g28_15_logFile0_g28_19
- val matee from g_1_mate_g28_19
-
-output:
- file "*.rmd"  into g28_19_rMarkdown0_g28_25
-
-
-
-shell:
-
-if(matee=="pair"){
-	readArray = log_files.toString().split(' ')
-	assemble = readArray[0]
-	name = assemble-"_table.tab"
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	```{r, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("assemble_length", "Histogram showing the distribution assembled sequence lengths in 
-	                            nucleotides for the Align step (top) and Reference step (bottom).")
-	figures("assemble_overlap", "Histogram showing the distribution of overlapping nucleotides between 
-	                             mate-pairs for the Align step (top) and Reference step (bottom).
-	                             Negative values for overlap indicate non-overlapping mate-pairs
-	                             with the negative value being the number of gap characters between
-	                             the ends of the two mate-pairs.")
-	figures("assemble_error", "Histograms showing the distribution of paired-end assembly error 
-	                           rates for the Align step (top) and identity to the reference germline 
-	                           for the Reference step (bottom).")
-	figures("assemble_pvalue", "Histograms showing the distribution of significance scores for 
-	                            paired-end assemblies. P-values for the Align mode are shown in the top
-	                            panel. E-values from the Reference step's alignment against the 
-	                            germline sequences are shown in the bottom panel for both input files
-	                            separately.")
-	```
-	
-	```{r, echo=FALSE, warning=FALSE}
-	assemble_log <- loadLogTable(file.path(".", "!{assemble}"))
-	
-	# Subset to align and reference logs
-	align_fields <- c("ERROR", "PVALUE")
-	ref_fields <- c("REFID", "GAP", "EVALUE1", "EVALUE2", "IDENTITY")
-	align_log <- assemble_log[!is.na(assemble_log$ERROR), !(names(assemble_log) %in% ref_fields)]
-	ref_log <- assemble_log[!is.na(assemble_log$REFID), !(names(assemble_log) %in% align_fields)]
-	
-	# Build log set
-	assemble_list <- list()
-	if (nrow(align_log) > 0) { assemble_list[["Align"]] <- align_log }
-	if (nrow(ref_log) > 0) { assemble_list[["Reference"]] <- ref_log }
-	plot_titles <- names(assemble_list)
-	```
-	
-	# Paired-End Assembly
-	
-	Assembly of paired-end reads is performed using the AssemblePairs tool which 
-	determines the read overlap in two steps. First, de novo assembly is attempted 
-	using an exhaustive approach to identify all possible overlaps between the 
-	two reads with alignment error rates and p-values below user-defined thresholds. 
-	This method is denoted as the `Align` method in the following figures. 
-	Second, those reads failing the first stage of de novo assembly are then 
-	mapped to the V-region reference sequences to create a full length sequence, 
-	padding with Ns, for any amplicons that have insufficient overlap for 
-	de novo assembly. This second stage is referred to as the `Reference` step in the
-	figures below.
-	
-	## Assembled sequence lengths
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="length", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
-	```
-	
-	`r figures("assemble_length")`
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="overlap", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
-	```
-	
-	`r figures("assemble_overlap")`
-	
-	## Alignment error rates and significance
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="error", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
-	```
-	
-	`r figures("assemble_error")`
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="pvalue", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
-	```
-
-	`r figures("assemble_pvalue")`
-
-	EOF
-	
-	open OUT, ">AP_!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-
-}else{
-	
-	"""
-	echo -e 'AssemblePairs works only on pair-end reads.'
-	"""
-}
-}
-
-
-process Assemble_pairs_align_presto_render_rmarkdown {
-
-input:
- file rmk from g28_19_rMarkdown0_g28_25
- file log_file from g28_15_logFile0_g28_25
-
-output:
- file "*.html" optional true  into g28_25_outputFileHTML00
- file "*csv" optional true  into g28_25_csvFile11
-
-"""
-
-#!/usr/bin/env Rscript 
-
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
-
-"""
 }
 
 
@@ -1540,10 +1373,176 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 }
 
 
-process Assemble_pairs_reference_assemble_pairs {
+process Assemble_pairs_parse_log_AP {
 
 input:
- set val(name),file(reads) from g28_12_reads_failed2_g73_12
+ set val(name),file(log_file) from g28_12_logFile1_g28_15
+ val mate from g_1_mate_g28_15
+
+output:
+ file "*table.tab"  into g28_15_logFile0_g28_25, g28_15_logFile0_g28_19
+
+script:
+field_to_parse = params.Assemble_pairs_parse_log_AP.field_to_parse
+readArray = log_file.toString()	
+
+"""
+ParseLog.py -l ${readArray}  -f ${field_to_parse}
+"""
+
+
+}
+
+
+process Assemble_pairs_report_assemble_pairs {
+
+input:
+ file log_files from g28_15_logFile0_g28_19
+ val matee from g_1_mate_g28_19
+
+output:
+ file "*.rmd"  into g28_19_rMarkdown0_g28_25
+
+
+
+shell:
+
+if(matee=="pair"){
+	readArray = log_files.toString().split(' ')
+	assemble = readArray[0]
+	name = assemble-"_table.tab"
+	'''
+	#!/usr/bin/env perl
+	
+	
+	my $script = <<'EOF';
+	
+	```{r, message=FALSE, echo=FALSE, results="hide"}
+	# Setup
+	library(prestor)
+	library(knitr)
+	library(captioner)
+	
+	if (!exists("tables")) { tables <- captioner(prefix="Table") }
+	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+	figures("assemble_length", "Histogram showing the distribution assembled sequence lengths in 
+	                            nucleotides for the Align step (top) and Reference step (bottom).")
+	figures("assemble_overlap", "Histogram showing the distribution of overlapping nucleotides between 
+	                             mate-pairs for the Align step (top) and Reference step (bottom).
+	                             Negative values for overlap indicate non-overlapping mate-pairs
+	                             with the negative value being the number of gap characters between
+	                             the ends of the two mate-pairs.")
+	figures("assemble_error", "Histograms showing the distribution of paired-end assembly error 
+	                           rates for the Align step (top) and identity to the reference germline 
+	                           for the Reference step (bottom).")
+	figures("assemble_pvalue", "Histograms showing the distribution of significance scores for 
+	                            paired-end assemblies. P-values for the Align mode are shown in the top
+	                            panel. E-values from the Reference step's alignment against the 
+	                            germline sequences are shown in the bottom panel for both input files
+	                            separately.")
+	```
+	
+	```{r, echo=FALSE, warning=FALSE}
+	assemble_log <- loadLogTable(file.path(".", "!{assemble}"))
+	
+	# Subset to align and reference logs
+	align_fields <- c("ERROR", "PVALUE")
+	ref_fields <- c("REFID", "GAP", "EVALUE1", "EVALUE2", "IDENTITY")
+	align_log <- assemble_log[!is.na(assemble_log$ERROR), !(names(assemble_log) %in% ref_fields)]
+	ref_log <- assemble_log[!is.na(assemble_log$REFID), !(names(assemble_log) %in% align_fields)]
+	
+	# Build log set
+	assemble_list <- list()
+	if (nrow(align_log) > 0) { assemble_list[["Align"]] <- align_log }
+	if (nrow(ref_log) > 0) { assemble_list[["Reference"]] <- ref_log }
+	plot_titles <- names(assemble_list)
+	```
+	
+	# Paired-End Assembly
+	
+	Assembly of paired-end reads is performed using the AssemblePairs tool which 
+	determines the read overlap in two steps. First, de novo assembly is attempted 
+	using an exhaustive approach to identify all possible overlaps between the 
+	two reads with alignment error rates and p-values below user-defined thresholds. 
+	This method is denoted as the `Align` method in the following figures. 
+	Second, those reads failing the first stage of de novo assembly are then 
+	mapped to the V-region reference sequences to create a full length sequence, 
+	padding with Ns, for any amplicons that have insufficient overlap for 
+	de novo assembly. This second stage is referred to as the `Reference` step in the
+	figures below.
+	
+	## Assembled sequence lengths
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="length", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+	
+	`r figures("assemble_length")`
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="overlap", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+	
+	`r figures("assemble_overlap")`
+	
+	## Alignment error rates and significance
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="error", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+	
+	`r figures("assemble_error")`
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="pvalue", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+
+	`r figures("assemble_pvalue")`
+
+	EOF
+	
+	open OUT, ">AP_!{name}.rmd";
+	print OUT $script;
+	close OUT;
+	
+	'''
+
+}else{
+	
+	"""
+	echo -e 'AssemblePairs works only on pair-end reads.'
+	"""
+}
+}
+
+
+process Assemble_pairs_presto_render_rmarkdown {
+
+input:
+ file rmk from g28_19_rMarkdown0_g28_25
+ file log_file from g28_15_logFile0_g28_25
+
+output:
+ file "*.html" optional true  into g28_25_outputFileHTML00
+ file "*csv" optional true  into g28_25_csvFile11
+
+"""
+
+#!/usr/bin/env Rscript 
+
+rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
+
+"""
+}
+
+
+process Assemble_pairs_assemble_pairs {
+
+input:
  val mate from g_1_mate_g73_12
 
 output:
@@ -1553,30 +1552,30 @@ output:
  set val(name),file("out*")  into g73_12_logFile33
 
 script:
-method = params.Assemble_pairs_reference_assemble_pairs.method
-coord = params.Assemble_pairs_reference_assemble_pairs.coord
-rc = params.Assemble_pairs_reference_assemble_pairs.rc
-head_fields_R1 = params.Assemble_pairs_reference_assemble_pairs.head_fields_R1
-head_fields_R2 = params.Assemble_pairs_reference_assemble_pairs.head_fields_R2
-failed = params.Assemble_pairs_reference_assemble_pairs.failed
-fasta = params.Assemble_pairs_reference_assemble_pairs.fasta
-nproc = params.Assemble_pairs_reference_assemble_pairs.nproc
-alpha = params.Assemble_pairs_reference_assemble_pairs.alpha
-maxerror = params.Assemble_pairs_reference_assemble_pairs.maxerror
-minlen = params.Assemble_pairs_reference_assemble_pairs.minlen
-maxlen = params.Assemble_pairs_reference_assemble_pairs.maxlen
-scanrev = params.Assemble_pairs_reference_assemble_pairs.scanrev
-minident = params.Assemble_pairs_reference_assemble_pairs.minident
-evalue = params.Assemble_pairs_reference_assemble_pairs.evalue
-maxhits = params.Assemble_pairs_reference_assemble_pairs.maxhits
-fill = params.Assemble_pairs_reference_assemble_pairs.fill
-aligner = params.Assemble_pairs_reference_assemble_pairs.aligner
-// align_exec = params.Assemble_pairs_reference_assemble_pairs.// align_exec
-// dbexec = params.Assemble_pairs_reference_assemble_pairs.// dbexec
-gap = params.Assemble_pairs_reference_assemble_pairs.gap
-usearch_version = params.Assemble_pairs_reference_assemble_pairs.usearch_version
-assemble_reference = params.Assemble_pairs_reference_assemble_pairs.assemble_reference
-head_seqeunce_file = params.Assemble_pairs_reference_assemble_pairs.head_seqeunce_file
+method = params.Assemble_pairs_assemble_pairs.method
+coord = params.Assemble_pairs_assemble_pairs.coord
+rc = params.Assemble_pairs_assemble_pairs.rc
+head_fields_R1 = params.Assemble_pairs_assemble_pairs.head_fields_R1
+head_fields_R2 = params.Assemble_pairs_assemble_pairs.head_fields_R2
+failed = params.Assemble_pairs_assemble_pairs.failed
+fasta = params.Assemble_pairs_assemble_pairs.fasta
+nproc = params.Assemble_pairs_assemble_pairs.nproc
+alpha = params.Assemble_pairs_assemble_pairs.alpha
+maxerror = params.Assemble_pairs_assemble_pairs.maxerror
+minlen = params.Assemble_pairs_assemble_pairs.minlen
+maxlen = params.Assemble_pairs_assemble_pairs.maxlen
+scanrev = params.Assemble_pairs_assemble_pairs.scanrev
+minident = params.Assemble_pairs_assemble_pairs.minident
+evalue = params.Assemble_pairs_assemble_pairs.evalue
+maxhits = params.Assemble_pairs_assemble_pairs.maxhits
+fill = params.Assemble_pairs_assemble_pairs.fill
+aligner = params.Assemble_pairs_assemble_pairs.aligner
+// align_exec = params.Assemble_pairs_assemble_pairs.// align_exec
+// dbexec = params.Assemble_pairs_assemble_pairs.// dbexec
+gap = params.Assemble_pairs_assemble_pairs.gap
+usearch_version = params.Assemble_pairs_assemble_pairs.usearch_version
+assemble_reference = params.Assemble_pairs_assemble_pairs.assemble_reference
+head_seqeunce_file = params.Assemble_pairs_assemble_pairs.head_seqeunce_file
 //* @style @condition:{method="align",alpha,maxerror,minlen,maxlen,scanrev}, {method="sequential",alpha,maxerror,minlen,maxlen,scanrev,ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec} {method="reference",ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec} {method="join",gap} @multicolumn:{method,coord,rc,head_fields_R1,head_fields_R2,failed,nrpoc,usearch_version},{alpha,maxerror,minlen,maxlen,scanrev}, {ref_file,minident,evalue,maxhits,fill,aligner,align_exec,dbexec}, {gap} 
 
 // args
@@ -1623,7 +1622,7 @@ if(mate=="pair"){
 	R1 = readArray[0]
 	R2 = readArray[1]
 	
-	if(R1.contains("."+head_seqeunce_file)){
+	if(R1.contains(""+head_seqeunce_file)){
 		R1 = readArray[0]
 		R2 = readArray[1]
 	}else{
@@ -1733,7 +1732,7 @@ awk '/^>/{f=""; split(\$0,b,"${split_col}="); if(substr(b[2],1,3)=="IGK"){f="lig
 }
 
 
-process Assemble_pairs_reference_parse_log_AP {
+process Assemble_pairs_parse_log_AP {
 
 input:
  set val(name),file(log_file) from g73_12_logFile1_g73_15
@@ -1743,7 +1742,7 @@ output:
  file "*table.tab"  into g73_15_logFile0_g73_25, g73_15_logFile0_g73_19
 
 script:
-field_to_parse = params.Assemble_pairs_reference_parse_log_AP.field_to_parse
+field_to_parse = params.Assemble_pairs_parse_log_AP.field_to_parse
 readArray = log_file.toString()	
 
 """
@@ -1754,7 +1753,7 @@ ParseLog.py -l ${readArray}  -f ${field_to_parse}
 }
 
 
-process Assemble_pairs_reference_report_assemble_pairs {
+process Assemble_pairs_report_assemble_pairs {
 
 input:
  file log_files from g73_15_logFile0_g73_19
@@ -1880,7 +1879,7 @@ if(matee=="pair"){
 }
 
 
-process Assemble_pairs_reference_presto_render_rmarkdown {
+process Assemble_pairs_presto_render_rmarkdown {
 
 input:
  file rmk from g73_19_rMarkdown0_g73_25
