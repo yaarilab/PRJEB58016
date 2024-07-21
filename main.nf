@@ -380,7 +380,7 @@ SUFFIX = "_primers-pass.fastq_umi-pass"
 	awk 'NR==FNR && NR>1 {UMI=\$1;CLID=\$2;ID[UMI]=CLID} 
 		 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); split(a[4],b,"UMI="); UMI=b[2]; split(a[5],c,"CLID="); CLID=c[2];  if(CLID==ID[UMI]){flag=1; print}else{flag=0}}
 		 NR!=FNR && FNR%4!=1 && flag==1 {print}' \
-		 R1}\$TMP2_SUFFIX R1\$TMP1_SUFFIX > R1\$SUFFIX_f
+		 R1\$TMP2_SUFFIX R1\$TMP1_SUFFIX > R1\$SUFFIX_f
 			 
 	# combine cluster and UMI fields
 	sed -i 's/|CLID=/-/' R1\$SUFFIX_f
