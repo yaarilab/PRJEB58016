@@ -1096,6 +1096,173 @@ if(mate=="pair"){
 }
 
 
+process Assemble_pairs_align_parse_log_AP {
+
+input:
+ set val(name),file(log_file) from g28_12_logFile1_g28_15
+ val mate from g_1_mate_g28_15
+
+output:
+ file "*table.tab"  into g28_15_logFile0_g28_25, g28_15_logFile0_g28_19
+
+script:
+field_to_parse = params.Assemble_pairs_align_parse_log_AP.field_to_parse
+readArray = log_file.toString()	
+
+"""
+ParseLog.py -l ${readArray}  -f ${field_to_parse}
+"""
+
+
+}
+
+
+process Assemble_pairs_align_report_assemble_pairs {
+
+input:
+ file log_files from g28_15_logFile0_g28_19
+ val matee from g_1_mate_g28_19
+
+output:
+ file "*.rmd"  into g28_19_rMarkdown0_g28_25
+
+
+
+shell:
+
+if(matee=="pair"){
+	readArray = log_files.toString().split(' ')
+	assemble = readArray[0]
+	name = assemble-"_table.tab"
+	'''
+	#!/usr/bin/env perl
+	
+	
+	my $script = <<'EOF';
+	
+	```{r, message=FALSE, echo=FALSE, results="hide"}
+	# Setup
+	library(prestor)
+	library(knitr)
+	library(captioner)
+	
+	if (!exists("tables")) { tables <- captioner(prefix="Table") }
+	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+	figures("assemble_length", "Histogram showing the distribution assembled sequence lengths in 
+	                            nucleotides for the Align step (top) and Reference step (bottom).")
+	figures("assemble_overlap", "Histogram showing the distribution of overlapping nucleotides between 
+	                             mate-pairs for the Align step (top) and Reference step (bottom).
+	                             Negative values for overlap indicate non-overlapping mate-pairs
+	                             with the negative value being the number of gap characters between
+	                             the ends of the two mate-pairs.")
+	figures("assemble_error", "Histograms showing the distribution of paired-end assembly error 
+	                           rates for the Align step (top) and identity to the reference germline 
+	                           for the Reference step (bottom).")
+	figures("assemble_pvalue", "Histograms showing the distribution of significance scores for 
+	                            paired-end assemblies. P-values for the Align mode are shown in the top
+	                            panel. E-values from the Reference step's alignment against the 
+	                            germline sequences are shown in the bottom panel for both input files
+	                            separately.")
+	```
+	
+	```{r, echo=FALSE, warning=FALSE}
+	assemble_log <- loadLogTable(file.path(".", "!{assemble}"))
+	
+	# Subset to align and reference logs
+	align_fields <- c("ERROR", "PVALUE")
+	ref_fields <- c("REFID", "GAP", "EVALUE1", "EVALUE2", "IDENTITY")
+	align_log <- assemble_log[!is.na(assemble_log$ERROR), !(names(assemble_log) %in% ref_fields)]
+	ref_log <- assemble_log[!is.na(assemble_log$REFID), !(names(assemble_log) %in% align_fields)]
+	
+	# Build log set
+	assemble_list <- list()
+	if (nrow(align_log) > 0) { assemble_list[["Align"]] <- align_log }
+	if (nrow(ref_log) > 0) { assemble_list[["Reference"]] <- ref_log }
+	plot_titles <- names(assemble_list)
+	```
+	
+	# Paired-End Assembly
+	
+	Assembly of paired-end reads is performed using the AssemblePairs tool which 
+	determines the read overlap in two steps. First, de novo assembly is attempted 
+	using an exhaustive approach to identify all possible overlaps between the 
+	two reads with alignment error rates and p-values below user-defined thresholds. 
+	This method is denoted as the `Align` method in the following figures. 
+	Second, those reads failing the first stage of de novo assembly are then 
+	mapped to the V-region reference sequences to create a full length sequence, 
+	padding with Ns, for any amplicons that have insufficient overlap for 
+	de novo assembly. This second stage is referred to as the `Reference` step in the
+	figures below.
+	
+	## Assembled sequence lengths
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="length", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+	
+	`r figures("assemble_length")`
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="overlap", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+	
+	`r figures("assemble_overlap")`
+	
+	## Alignment error rates and significance
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="error", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+	
+	`r figures("assemble_error")`
+	
+	```{r, echo=FALSE, warning=FALSE}
+	plot_params <- list(titles=plot_titles, style="pvalue", sizing="figure")
+	do.call(plotAssemblePairs, c(assemble_list, plot_params))
+	```
+
+	`r figures("assemble_pvalue")`
+
+	EOF
+	
+	open OUT, ">AP_!{name}.rmd";
+	print OUT $script;
+	close OUT;
+	
+	'''
+
+}else{
+	
+	"""
+	echo -e 'AssemblePairs works only on pair-end reads.'
+	"""
+}
+}
+
+
+process Assemble_pairs_align_presto_render_rmarkdown {
+
+input:
+ file rmk from g28_19_rMarkdown0_g28_25
+ file log_file from g28_15_logFile0_g28_25
+
+output:
+ file "*.html" optional true  into g28_25_outputFileHTML00
+ file "*csv" optional true  into g28_25_csvFile11
+
+"""
+
+#!/usr/bin/env Rscript 
+
+rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
+
+"""
+}
+
+
 process Align_Sets_parse_log_AS {
 
 input:
@@ -1362,173 +1529,6 @@ input:
 output:
  file "*.html" optional true  into g61_10_outputFileHTML00
  file "*csv" optional true  into g61_10_csvFile11
-
-"""
-
-#!/usr/bin/env Rscript 
-
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
-
-"""
-}
-
-
-process Assemble_pairs_align_parse_log_AP {
-
-input:
- set val(name),file(log_file) from g28_12_logFile1_g28_15
- val mate from g_1_mate_g28_15
-
-output:
- file "*table.tab"  into g28_15_logFile0_g28_25, g28_15_logFile0_g28_19
-
-script:
-field_to_parse = params.Assemble_pairs_align_parse_log_AP.field_to_parse
-readArray = log_file.toString()	
-
-"""
-ParseLog.py -l ${readArray}  -f ${field_to_parse}
-"""
-
-
-}
-
-
-process Assemble_pairs_align_report_assemble_pairs {
-
-input:
- file log_files from g28_15_logFile0_g28_19
- val matee from g_1_mate_g28_19
-
-output:
- file "*.rmd"  into g28_19_rMarkdown0_g28_25
-
-
-
-shell:
-
-if(matee=="pair"){
-	readArray = log_files.toString().split(' ')
-	assemble = readArray[0]
-	name = assemble-"_table.tab"
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	```{r, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("assemble_length", "Histogram showing the distribution assembled sequence lengths in 
-	                            nucleotides for the Align step (top) and Reference step (bottom).")
-	figures("assemble_overlap", "Histogram showing the distribution of overlapping nucleotides between 
-	                             mate-pairs for the Align step (top) and Reference step (bottom).
-	                             Negative values for overlap indicate non-overlapping mate-pairs
-	                             with the negative value being the number of gap characters between
-	                             the ends of the two mate-pairs.")
-	figures("assemble_error", "Histograms showing the distribution of paired-end assembly error 
-	                           rates for the Align step (top) and identity to the reference germline 
-	                           for the Reference step (bottom).")
-	figures("assemble_pvalue", "Histograms showing the distribution of significance scores for 
-	                            paired-end assemblies. P-values for the Align mode are shown in the top
-	                            panel. E-values from the Reference step's alignment against the 
-	                            germline sequences are shown in the bottom panel for both input files
-	                            separately.")
-	```
-	
-	```{r, echo=FALSE, warning=FALSE}
-	assemble_log <- loadLogTable(file.path(".", "!{assemble}"))
-	
-	# Subset to align and reference logs
-	align_fields <- c("ERROR", "PVALUE")
-	ref_fields <- c("REFID", "GAP", "EVALUE1", "EVALUE2", "IDENTITY")
-	align_log <- assemble_log[!is.na(assemble_log$ERROR), !(names(assemble_log) %in% ref_fields)]
-	ref_log <- assemble_log[!is.na(assemble_log$REFID), !(names(assemble_log) %in% align_fields)]
-	
-	# Build log set
-	assemble_list <- list()
-	if (nrow(align_log) > 0) { assemble_list[["Align"]] <- align_log }
-	if (nrow(ref_log) > 0) { assemble_list[["Reference"]] <- ref_log }
-	plot_titles <- names(assemble_list)
-	```
-	
-	# Paired-End Assembly
-	
-	Assembly of paired-end reads is performed using the AssemblePairs tool which 
-	determines the read overlap in two steps. First, de novo assembly is attempted 
-	using an exhaustive approach to identify all possible overlaps between the 
-	two reads with alignment error rates and p-values below user-defined thresholds. 
-	This method is denoted as the `Align` method in the following figures. 
-	Second, those reads failing the first stage of de novo assembly are then 
-	mapped to the V-region reference sequences to create a full length sequence, 
-	padding with Ns, for any amplicons that have insufficient overlap for 
-	de novo assembly. This second stage is referred to as the `Reference` step in the
-	figures below.
-	
-	## Assembled sequence lengths
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="length", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
-	```
-	
-	`r figures("assemble_length")`
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="overlap", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
-	```
-	
-	`r figures("assemble_overlap")`
-	
-	## Alignment error rates and significance
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="error", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
-	```
-	
-	`r figures("assemble_error")`
-	
-	```{r, echo=FALSE, warning=FALSE}
-	plot_params <- list(titles=plot_titles, style="pvalue", sizing="figure")
-	do.call(plotAssemblePairs, c(assemble_list, plot_params))
-	```
-
-	`r figures("assemble_pvalue")`
-
-	EOF
-	
-	open OUT, ">AP_!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-
-}else{
-	
-	"""
-	echo -e 'AssemblePairs works only on pair-end reads.'
-	"""
-}
-}
-
-
-process Assemble_pairs_align_presto_render_rmarkdown {
-
-input:
- file rmk from g28_19_rMarkdown0_g28_25
- file log_file from g28_15_logFile0_g28_25
-
-output:
- file "*.html" optional true  into g28_25_outputFileHTML00
- file "*csv" optional true  into g28_25_csvFile11
 
 """
 
