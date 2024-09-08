@@ -379,7 +379,7 @@ awk 'NR==FNR && NR>1 {UMI=\$1;CLID=\$2;ID[UMI]=CLID}
 	 R1\$TMP_SUFFIX ${R1} > R1_select-pass.fastq
 		 
 # combine cluster and UMI fields
-sed -i 's/UMI=\([^|]*\)|ISOTYPE=\([^|]*\)|CLID=\([^|]*\)/UMI=\1-\3|ISOTYPE=\2/' R1_select-pass.fastq
+sed -i 's/UMI=\\([^|]*\\)|ISOTYPE=\\([^|]*\\)|CLID=\\([^|]*\\)/UMI=\\1-\\3|ISOTYPE=\\2/' R1_select-pass.fastq
 
 ## pair awk between M1S and Z, so cluster-UMI information will be transfered
 awk 'NR==FNR && NR%4==1 {split(\$0,a,"|"); id=a[1]; split(a[3],b,"UMI="); umi=b[2]; z[id]=umi;} 
