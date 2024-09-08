@@ -237,6 +237,160 @@ awk -F'\t' 'NR==FNR && NR>1 {umi[\$1]=\$2;} NR!=FNR {if(/UMI=/){split(\$0,a,"${u
 }
 
 
+process Cluster_Sets_cluster_sets {
+
+input:
+ set val(name),file(reads) from g_71_reads0_g80_14
+ val mate from g_1_mate_g80_14
+
+output:
+ set val(name),file("*_cluster-pass.fastq")  into g80_14_reads0_g_81
+ set val(name),file("*_cluster-fail.fastq") optional true  into g80_14_reads_failed11
+
+script:
+method = params.Cluster_Sets_cluster_sets.method
+failed = params.Cluster_Sets_cluster_sets.failed
+nproc = params.Cluster_Sets_cluster_sets.nproc
+cluster_field = params.Cluster_Sets_cluster_sets.cluster_field
+ident = params.Cluster_Sets_cluster_sets.ident
+length = params.Cluster_Sets_cluster_sets.length
+prefix = params.Cluster_Sets_cluster_sets.prefix
+cluster_tool = params.Cluster_Sets_cluster_sets.cluster_tool
+cluster_exec = params.Cluster_Sets_cluster_sets.cluster_exec
+usearch_version = params.Cluster_Sets_cluster_sets.usearch_version
+set_field = params.Cluster_Sets_cluster_sets.set_field
+start = params.Cluster_Sets_cluster_sets.start
+end = params.Cluster_Sets_cluster_sets.end
+barcode_field = params.Cluster_Sets_cluster_sets.barcode_field
+//* @style @condition:{method="set",set_field,start,end},{method="all",start,end},{method="barcode",barcode_field} @array:{method,failed,cluster_field,ident,length,prefix,cluster_tool,cluster_exec,set_field,start,end,barcode_field}  @multicolumn:{method,failed,nproc,cluster_field,ident,length,prefix,cluster_tool,cluster_exec},{set_field,start,end,barcode_field}
+
+method = (method.size==2) ? method : [method[0],method[0]]
+failed = (failed.size==2) ? failed : [failed[0],failed[0]]
+cluster_field = (cluster_field.size==2) ? cluster_field : [cluster_field[0],cluster_field[0]]
+ident = (ident.size==2) ? ident : [ident[0],ident[0]]
+length = (length.size==2) ? length : [length[0],length[0]]
+prefix = (prefix.size==2) ? prefix : [prefix[0],prefix[0]]
+set_field = (set_field.size==2) ? set_field : [set_field[0],set_field[0]]
+start = (start.size==2) ? start : [start[0],start[0]]
+end = (end.size==2) ? end : [end[0],end[0]]
+barcode_field = (barcode_field.size==2) ? barcode_field : [barcode_field[0],barcode_field[0]]
+
+def args_values = [];
+[method, failed, cluster_field, ident, length, prefix, set_field, start, end, barcode_field].transpose().each { m, f, cf, i, l, p, sf, s, e, bf -> {
+    f = (f=="true") ? "--failed" : ""
+    p = (p=="") ? "" : "--prefix ${p}" 
+    //ce = (ce=="") ? "" : "--exec ${ce}" 
+    sf = (m=="set") ? "-f ${sf}" : ""
+    s = (m=="barcode") ? "" : "--start ${s}" 
+    e = (m=="barcode") ? "" : (e=="") ? "" : "--end ${e}" 
+    bf = (m=="barcode") ? "-f ${bf}" : ""
+    args_values.add("${m} ${f} -k ${cf} --ident ${i} --length ${l} ${p} ${sf} ${s} ${e} ${bf}")
+}}
+
+
+if(mate=="pair"){
+	// files
+	readArray = reads.toString().split(' ')	
+	R1 = readArray.grep(~/.*R1.*/)[0]
+	R2 = readArray.grep(~/.*R2.*/)[0]
+	
+	args_1 = args_values[0]
+	args_2 = args_values[1]
+	
+	"""
+	
+	if  [ "${cluster_tool}" == "usearch"] && ["${cluster_exec}"==""]; then
+		wget -q --show-progress --no-check-certificate https://drive5.com/downloads/usearch${usearch_version}_i86linux32.gz
+		gunzip usearch${usearch_version}_i86linux32.gz
+		chmod +x usearch${usearch_version}_i86linux32
+		mv usearch${usearch_version}_i86linux32 /usr/local/bin/usearch2
+		ce=" --exec /usr/local/bin/usearch2"
+		echo "usearch"
+	else
+		echo "no usearch"
+		if [ "${cluster_exec}" != "" ]; then
+			ce=" --exec ${cluster_exec}"
+			ct=" --cluster ${cluster_tool}"
+		else
+			ce=""
+			ct=" --cluster ${cluster_tool}"
+		fi
+	fi
+	
+	ClusterSets.py ${args_1} -s $R1  --nproc ${nproc} \$ce 
+	ClusterSets.py ${args_2} -s $R2  --nproc ${nproc} \$ce 
+	"""
+}else{
+	args_1 = args_values[0]
+	"""
+	if  [ "${cluster_tool}" == "usearch" ] && ["${cluster_exec}"==""]; then
+		wget -q --show-progress --no-check-certificate https://drive5.com/downloads/usearch${usearch_version}_i86linux32.gz
+		gunzip usearch${usearch_version}_i86linux32.gz
+		chmod +x usearch${usearch_version}_i86linux32
+		mv usearch${usearch_version}_i86linux32 /usr/local/bin/usearch2
+		ce=" --exec /usr/local/bin/usearch2"
+		ct=" --cluster userach"
+	else
+		if [ "${cluster_exec}" != "" ]; then
+			ce=" --exec ${cluster_exec}"
+			ct=" --cluster ${cluster_tool}"
+		else
+			ce=""
+			ct=" --cluster ${cluster_tool}"
+		fi
+	fi
+	
+	ClusterSets.py ${args_1} -s $reads --nproc ${nproc} \$ce \$ct
+	"""
+}
+
+
+}
+
+
+process take_the_biggest_cluster_of_each_UMI_p11 {
+
+input:
+ set val(name),file(reads) from g80_14_reads0_g_81
+
+output:
+ set val(name),file("*_select-pass.fastq")  into g_81_reads0_g52_0
+
+script:
+
+readArray = reads.toString().split(' ')	
+
+R1 = readArray[0]
+R2 = readArray[1]
+
+"""
+#!/bin/bash
+
+TMP_SUFFIX=".UMI_TO_CLUSTER.txt"
+
+awk 'BEGIN{LARGEST_CLID="";LARGEST_SIZE=0;print "UMI\tLARGEST_CLID\tCLID_SIZE";} 
+	 NR%4==1 {split(\$0,a,"|"); split(a[3],b,"UMI="); UMI=b[2]; split(a[5],c,"CLID="); CLID=c[2];  if(UMI==PREV_UMI || NR==1) {ARR[UMI"_"CLID]+=1; if(ARR[UMI"_"CLID]>LARGEST_SIZE) {LARGEST_SIZE=ARR[UMI"_"CLID]; LARGEST_CLID=CLID} ; if (NR==1) {PREV_UMI=UMI}; next } else { print PREV_UMI"\t"LARGEST_CLID"\t"LARGEST_SIZE; ARR[UMI"_"CLID]+=1; LARGEST_CLID=CLID;LARGEST_SIZE=ARR[UMI"_"CLID]; PREV_UMI=UMI; next }} 
+	 END { print PREV_UMI"\t"LARGEST_CLID"\t"LARGEST_SIZE;} ' \
+	 ${R1}  > R1\$TMP_SUFFIX
+				
+awk 'NR==FNR && NR>1 {UMI=\$1;CLID=\$2;ID[UMI]=CLID} 
+	 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); split(a[3],b,"UMI="); UMI=b[2]; split(a[5],c,"CLID="); CLID=c[2];  if(CLID==ID[UMI]){flag=1; print}else{flag=0}}
+	 NR!=FNR && FNR%4!=1 && flag==1 {print}' \
+	 R1\$TMP_SUFFIX ${R1} > R1_select-pass.fastq
+		 
+# combine cluster and UMI fields
+sed -i 's/UMI=\([^|]*\)|ISOTYPE=\([^|]*\)|CLID=\([^|]*\)/UMI=\1-\3|ISOTYPE=\2/' R1_select-pass.fastq
+
+## pair awk between M1S and Z, so cluster-UMI information will be transfered
+awk 'NR==FNR && NR%4==1 {split(\$0,a,"|"); id=a[1]; split(a[3],b,"UMI="); umi=b[2]; z[id]=umi;} 
+	 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); id=a[1]; header=a[1]"|"a[2]"|"a[4]"|UMI="z[id]; print (header);} 
+	 NR!=FNR && FNR%4!=1 {print}' \
+	 R1_select-pass.fastq ${R2} > R2_select-pass.fastq
+
+"""
+}
+
+
 process Mask_Primer_parse_log_MP {
 
 input:
@@ -472,160 +626,6 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 }
 
 
-process Cluster_Sets_cluster_sets {
-
-input:
- set val(name),file(reads) from g_71_reads0_g80_14
- val mate from g_1_mate_g80_14
-
-output:
- set val(name),file("*_cluster-pass.fastq")  into g80_14_reads0_g_81
- set val(name),file("*_cluster-fail.fastq") optional true  into g80_14_reads_failed11
-
-script:
-method = params.Cluster_Sets_cluster_sets.method
-failed = params.Cluster_Sets_cluster_sets.failed
-nproc = params.Cluster_Sets_cluster_sets.nproc
-cluster_field = params.Cluster_Sets_cluster_sets.cluster_field
-ident = params.Cluster_Sets_cluster_sets.ident
-length = params.Cluster_Sets_cluster_sets.length
-prefix = params.Cluster_Sets_cluster_sets.prefix
-cluster_tool = params.Cluster_Sets_cluster_sets.cluster_tool
-cluster_exec = params.Cluster_Sets_cluster_sets.cluster_exec
-usearch_version = params.Cluster_Sets_cluster_sets.usearch_version
-set_field = params.Cluster_Sets_cluster_sets.set_field
-start = params.Cluster_Sets_cluster_sets.start
-end = params.Cluster_Sets_cluster_sets.end
-barcode_field = params.Cluster_Sets_cluster_sets.barcode_field
-//* @style @condition:{method="set",set_field,start,end},{method="all",start,end},{method="barcode",barcode_field} @array:{method,failed,cluster_field,ident,length,prefix,cluster_tool,cluster_exec,set_field,start,end,barcode_field}  @multicolumn:{method,failed,nproc,cluster_field,ident,length,prefix,cluster_tool,cluster_exec},{set_field,start,end,barcode_field}
-
-method = (method.size==2) ? method : [method[0],method[0]]
-failed = (failed.size==2) ? failed : [failed[0],failed[0]]
-cluster_field = (cluster_field.size==2) ? cluster_field : [cluster_field[0],cluster_field[0]]
-ident = (ident.size==2) ? ident : [ident[0],ident[0]]
-length = (length.size==2) ? length : [length[0],length[0]]
-prefix = (prefix.size==2) ? prefix : [prefix[0],prefix[0]]
-set_field = (set_field.size==2) ? set_field : [set_field[0],set_field[0]]
-start = (start.size==2) ? start : [start[0],start[0]]
-end = (end.size==2) ? end : [end[0],end[0]]
-barcode_field = (barcode_field.size==2) ? barcode_field : [barcode_field[0],barcode_field[0]]
-
-def args_values = [];
-[method, failed, cluster_field, ident, length, prefix, set_field, start, end, barcode_field].transpose().each { m, f, cf, i, l, p, sf, s, e, bf -> {
-    f = (f=="true") ? "--failed" : ""
-    p = (p=="") ? "" : "--prefix ${p}" 
-    //ce = (ce=="") ? "" : "--exec ${ce}" 
-    sf = (m=="set") ? "-f ${sf}" : ""
-    s = (m=="barcode") ? "" : "--start ${s}" 
-    e = (m=="barcode") ? "" : (e=="") ? "" : "--end ${e}" 
-    bf = (m=="barcode") ? "-f ${bf}" : ""
-    args_values.add("${m} ${f} -k ${cf} --ident ${i} --length ${l} ${p} ${sf} ${s} ${e} ${bf}")
-}}
-
-
-if(mate=="pair"){
-	// files
-	readArray = reads.toString().split(' ')	
-	R1 = readArray.grep(~/.*R1.*/)[0]
-	R2 = readArray.grep(~/.*R2.*/)[0]
-	
-	args_1 = args_values[0]
-	args_2 = args_values[1]
-	
-	"""
-	
-	if  [ "${cluster_tool}" == "usearch"] && ["${cluster_exec}"==""]; then
-		wget -q --show-progress --no-check-certificate https://drive5.com/downloads/usearch${usearch_version}_i86linux32.gz
-		gunzip usearch${usearch_version}_i86linux32.gz
-		chmod +x usearch${usearch_version}_i86linux32
-		mv usearch${usearch_version}_i86linux32 /usr/local/bin/usearch2
-		ce=" --exec /usr/local/bin/usearch2"
-		echo "usearch"
-	else
-		echo "no usearch"
-		if [ "${cluster_exec}" != "" ]; then
-			ce=" --exec ${cluster_exec}"
-			ct=" --cluster ${cluster_tool}"
-		else
-			ce=""
-			ct=" --cluster ${cluster_tool}"
-		fi
-	fi
-	
-	ClusterSets.py ${args_1} -s $R1  --nproc ${nproc} \$ce 
-	ClusterSets.py ${args_2} -s $R2  --nproc ${nproc} \$ce 
-	"""
-}else{
-	args_1 = args_values[0]
-	"""
-	if  [ "${cluster_tool}" == "usearch" ] && ["${cluster_exec}"==""]; then
-		wget -q --show-progress --no-check-certificate https://drive5.com/downloads/usearch${usearch_version}_i86linux32.gz
-		gunzip usearch${usearch_version}_i86linux32.gz
-		chmod +x usearch${usearch_version}_i86linux32
-		mv usearch${usearch_version}_i86linux32 /usr/local/bin/usearch2
-		ce=" --exec /usr/local/bin/usearch2"
-		ct=" --cluster userach"
-	else
-		if [ "${cluster_exec}" != "" ]; then
-			ce=" --exec ${cluster_exec}"
-			ct=" --cluster ${cluster_tool}"
-		else
-			ce=""
-			ct=" --cluster ${cluster_tool}"
-		fi
-	fi
-	
-	ClusterSets.py ${args_1} -s $reads --nproc ${nproc} \$ce \$ct
-	"""
-}
-
-
-}
-
-
-process take_the_biggest_cluster_of_each_UMI_p11 {
-
-input:
- set val(name),file(reads) from g80_14_reads0_g_81
-
-output:
- set val(name),file("*_select-pass.fastq")  into g_81_reads0_g52_0
-
-script:
-
-readArray = reads.toString().split(' ')	
-
-R1 = readArray[0]
-R2 = readArray[1]
-
-"""
-#!/bin/bash
-
-TMP_SUFFIX=".UMI_TO_CLUSTER.txt"
-
-awk 'BEGIN{LARGEST_CLID="";LARGEST_SIZE=0;print "UMI\tLARGEST_CLID\tCLID_SIZE";} 
-	 NR%4==1 {split(\$0,a,"|"); split(a[3],b,"UMI="); UMI=b[2]; split(a[5],c,"CLID="); CLID=c[2];  if(UMI==PREV_UMI || NR==1) {ARR[UMI"_"CLID]+=1; if(ARR[UMI"_"CLID]>LARGEST_SIZE) {LARGEST_SIZE=ARR[UMI"_"CLID]; LARGEST_CLID=CLID} ; if (NR==1) {PREV_UMI=UMI}; next } else { print PREV_UMI"\t"LARGEST_CLID"\t"LARGEST_SIZE; ARR[UMI"_"CLID]+=1; LARGEST_CLID=CLID;LARGEST_SIZE=ARR[UMI"_"CLID]; PREV_UMI=UMI; next }} 
-	 END { print PREV_UMI"\t"LARGEST_CLID"\t"LARGEST_SIZE;} ' \
-	 ${R1}  > R1\$TMP_SUFFIX
-				
-awk 'NR==FNR && NR>1 {UMI=\$1;CLID=\$2;ID[UMI]=CLID} 
-	 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); split(a[3],b,"UMI="); UMI=b[2]; split(a[5],c,"CLID="); CLID=c[2];  if(CLID==ID[UMI]){flag=1; print}else{flag=0}}
-	 NR!=FNR && FNR%4!=1 && flag==1 {print}' \
-	 R1\$TMP_SUFFIX ${R1} > R1_select-pass.fastq
-		 
-# combine cluster and UMI fields
-sed -i 's/|CLID=/-/' R1_select-pass.fastq
-
-## pair awk between M1S and Z, so cluster-UMI information will be transfered
-awk 'NR==FNR && NR%4==1 {split(\$0,a,"|"); id=a[1]; split(a[3],b,"UMI="); umi=b[2]; z[id]=umi;} 
-	 NR!=FNR && FNR%4==1 {split(\$0,a,"|"); id=a[1]; header=a[1]"|"a[2]"|"a[4]"|UMI="z[id]; print (header);} 
-	 NR!=FNR && FNR%4!=1 {print}' \
-	 R1_select-pass.fastq ${R2} > R2_select-pass.fastq
-
-"""
-}
-
-
 process Align_Sets_align_sets {
 
 input:
@@ -726,168 +726,6 @@ if(mate=="pair"){
 	"""
 }
 
-}
-
-
-process Align_Sets_parse_log_AS {
-
-input:
- set val(name), file(log_file) from g52_0_logFile1_g52_1
- val mate from g_1_mate_g52_1
-
-output:
- file "*table.tab"  into g52_1_logFile0_g52_8, g52_1_logFile0_g52_13
-
-script:
-field_to_parse = params.Align_Sets_parse_log_AS.field_to_parse
-readArray = log_file.toString()	
-
-"""
-ParseLog.py -l ${readArray}  -f ${field_to_parse}
-"""
-
-}
-
-
-process Align_Sets_report_Align_Sets {
-
-input:
- val matee from g_1_mate_g52_8
- file log_files from g52_1_logFile0_g52_8
-
-output:
- file "*.rmd"  into g52_8_rMarkdown0_g52_13
-
-
-shell:
-
-if(matee=="pair"){
-	readArray = log_files.toString().split(' ')	
-	R1 = readArray[0]
-	R2 = readArray[1]
-	name = R1 - "_table.tab"
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	plot_titles <- plot_titles<- c("Read 1", "Read 2")
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("align_size", 
-	        paste("Histogram of UMI read group sizes (reads per UMI) for", plot_titles[1], "(top) and", plot_titles[2],
-	        "(bottom). The x-axis indicates the number of reads in a UMI group and the y-axis is the 
-	        number of UMI groups with that size."))
-	
-	```
-	
-	```{r, echo=FALSE}
-	align_log_1 <- loadLogTable(file.path(".", "!{R1}"))
-	align_log_2 <- loadLogTable(file.path(".", "!{R2}"))
-	```
-	
-	# Multiple Alignment of UMI Read Groups
-	
-	Reads sharing the same UMI are multiple aligned using the muscle wrapper in the 
-	AlignSets tool.
-	
-	## Reads per UMI
-	
-	```{r, echo=FALSE}
-	plotAlignSets(align_log_1, align_log_2, style="size", sizing="figure")
-	```
-	
-	`r figures("align_size")`
-
-	
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-
-}else{
-	
-	readArray = log_files.toString().split(' ')
-	R1 = readArray[0]
-	name = R1 - "_table.tab"
-	'''
-	#!/usr/bin/env perl
-	
-	
-	my $script = <<'EOF';
-	
-	
-	```{R, message=FALSE, echo=FALSE, results="hide"}
-	# Setup
-	library(prestor)
-	library(knitr)
-	library(captioner)
-	
-	if (!exists("tables")) { tables <- captioner(prefix="Table") }
-	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-	figures("align_size", 
-	        "Histogram of UMI read group sizes (reads per UMI). 
-	        The x-axis indicates the number of reads in a UMI group and the y-axis is the 
-	        number of UMI groups with that size.")
-	```
-	
-	```{r, echo=FALSE}
-	align_log <- loadLogTable(file.path(".","!{R1}"))
-	```
-	
-	# Multiple Alignment of UMI Read Groups
-	
-	Reads sharing the same UMI are multiple aligned using the muscle wrapper in the 
-	AlignSets tool.
-	
-	## Reads per UMI
-	
-	```{r, echo=FALSE}
-	plotAlignSets(align_log, style="size", sizing="figure")
-	```
-	
-	`r figures("align_size")`
-	
-	EOF
-	
-	open OUT, ">!{name}.rmd";
-	print OUT $script;
-	close OUT;
-	
-	'''
-}
-
-}
-
-
-process Align_Sets_presto_render_rmarkdown {
-
-input:
- file rmk from g52_8_rMarkdown0_g52_13
- file log_file from g52_1_logFile0_g52_13
-
-output:
- file "*.html" optional true  into g52_13_outputFileHTML00
- file "*csv" optional true  into g52_13_csvFile11
-
-"""
-
-#!/usr/bin/env Rscript 
-
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
-
-"""
 }
 
 
@@ -1421,6 +1259,283 @@ rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_di
 }
 
 
+process Align_Sets_parse_log_AS {
+
+input:
+ set val(name), file(log_file) from g52_0_logFile1_g52_1
+ val mate from g_1_mate_g52_1
+
+output:
+ file "*table.tab"  into g52_1_logFile0_g52_8, g52_1_logFile0_g52_13
+
+script:
+field_to_parse = params.Align_Sets_parse_log_AS.field_to_parse
+readArray = log_file.toString()	
+
+"""
+ParseLog.py -l ${readArray}  -f ${field_to_parse}
+"""
+
+}
+
+
+process Align_Sets_report_Align_Sets {
+
+input:
+ val matee from g_1_mate_g52_8
+ file log_files from g52_1_logFile0_g52_8
+
+output:
+ file "*.rmd"  into g52_8_rMarkdown0_g52_13
+
+
+shell:
+
+if(matee=="pair"){
+	readArray = log_files.toString().split(' ')	
+	R1 = readArray[0]
+	R2 = readArray[1]
+	name = R1 - "_table.tab"
+	'''
+	#!/usr/bin/env perl
+	
+	
+	my $script = <<'EOF';
+	
+	
+	```{R, message=FALSE, echo=FALSE, results="hide"}
+	# Setup
+	library(prestor)
+	library(knitr)
+	library(captioner)
+	
+	plot_titles <- plot_titles<- c("Read 1", "Read 2")
+	if (!exists("tables")) { tables <- captioner(prefix="Table") }
+	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+	figures("align_size", 
+	        paste("Histogram of UMI read group sizes (reads per UMI) for", plot_titles[1], "(top) and", plot_titles[2],
+	        "(bottom). The x-axis indicates the number of reads in a UMI group and the y-axis is the 
+	        number of UMI groups with that size."))
+	
+	```
+	
+	```{r, echo=FALSE}
+	align_log_1 <- loadLogTable(file.path(".", "!{R1}"))
+	align_log_2 <- loadLogTable(file.path(".", "!{R2}"))
+	```
+	
+	# Multiple Alignment of UMI Read Groups
+	
+	Reads sharing the same UMI are multiple aligned using the muscle wrapper in the 
+	AlignSets tool.
+	
+	## Reads per UMI
+	
+	```{r, echo=FALSE}
+	plotAlignSets(align_log_1, align_log_2, style="size", sizing="figure")
+	```
+	
+	`r figures("align_size")`
+
+	
+	EOF
+	
+	open OUT, ">!{name}.rmd";
+	print OUT $script;
+	close OUT;
+	
+	'''
+
+}else{
+	
+	readArray = log_files.toString().split(' ')
+	R1 = readArray[0]
+	name = R1 - "_table.tab"
+	'''
+	#!/usr/bin/env perl
+	
+	
+	my $script = <<'EOF';
+	
+	
+	```{R, message=FALSE, echo=FALSE, results="hide"}
+	# Setup
+	library(prestor)
+	library(knitr)
+	library(captioner)
+	
+	if (!exists("tables")) { tables <- captioner(prefix="Table") }
+	if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+	figures("align_size", 
+	        "Histogram of UMI read group sizes (reads per UMI). 
+	        The x-axis indicates the number of reads in a UMI group and the y-axis is the 
+	        number of UMI groups with that size.")
+	```
+	
+	```{r, echo=FALSE}
+	align_log <- loadLogTable(file.path(".","!{R1}"))
+	```
+	
+	# Multiple Alignment of UMI Read Groups
+	
+	Reads sharing the same UMI are multiple aligned using the muscle wrapper in the 
+	AlignSets tool.
+	
+	## Reads per UMI
+	
+	```{r, echo=FALSE}
+	plotAlignSets(align_log, style="size", sizing="figure")
+	```
+	
+	`r figures("align_size")`
+	
+	EOF
+	
+	open OUT, ">!{name}.rmd";
+	print OUT $script;
+	close OUT;
+	
+	'''
+}
+
+}
+
+
+process Align_Sets_presto_render_rmarkdown {
+
+input:
+ file rmk from g52_8_rMarkdown0_g52_13
+ file log_file from g52_1_logFile0_g52_13
+
+output:
+ file "*.html" optional true  into g52_13_outputFileHTML00
+ file "*csv" optional true  into g52_13_csvFile11
+
+"""
+
+#!/usr/bin/env Rscript 
+
+rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
+
+"""
+}
+
+
+process make_report_pipeline_cat_all_file {
+
+input:
+ set val(name), file(log_file) from g52_0_logFile3_g61_0
+ set val(name), file(log_file) from g38_11_logFile3_g61_0
+
+output:
+ set val(name), file("all_out_file.log")  into g61_0_logFile0_g61_2, g61_0_logFile0_g61_10
+
+script:
+readArray = log_file.toString()
+
+"""
+
+echo $readArray
+cat out* >> all_out_file.log
+"""
+
+}
+
+
+process make_report_pipeline_report_pipeline {
+
+input:
+ set val(name), file(log_files) from g61_0_logFile0_g61_2
+
+output:
+ file "*.rmd"  into g61_2_rMarkdown0_g61_10
+
+
+shell:
+
+readArray = log_files.toString().split(' ')
+R1 = readArray[0]
+
+'''
+#!/usr/bin/env perl
+
+
+my $script = <<'EOF';
+
+
+```{r, message=FALSE, echo=FALSE, results="hide"}
+# Setup
+library(prestor)
+library(knitr)
+library(captioner)
+
+plot_titles <- c("Read 1", "Read 2")
+if (!exists("tables")) { tables <- captioner(prefix="Table") }
+if (!exists("figures")) { figures <- captioner(prefix="Figure") }
+tables("count", 
+       "The count of reads that passed and failed each processing step.")
+figures("steps", 
+        paste("The number of reads or read sets retained at each processing step. 
+               Shown as raw counts (top) and percentages of input from the previous 
+               step (bottom). Steps having more than one column display individual values for", 
+              plot_titles[1], "(first column) and", plot_titles[2], "(second column)."))
+```
+
+```{r, echo=FALSE}
+console_log <- loadConsoleLog(file.path(".","!{R1}"))
+```
+
+# Summary of Processing Steps
+
+```{r, echo=FALSE}
+count_df <- plotConsoleLog(console_log, sizing="figure")
+
+df<-count_df[,c("task", "pass", "fail")]
+
+write.csv(df,"pipeline_statistics.csv") 
+```
+
+`r figures("steps")`
+
+```{r, echo=FALSE}
+kable(count_df[c("step", "task", "total", "pass", "fail")],
+      col.names=c("Step", "Task", "Input", "Passed", "Failed"),
+      digits=3)
+```
+
+`r tables("count")`
+
+
+EOF
+	
+open OUT, ">pipeline_statistic_!{name}.rmd";
+print OUT $script;
+close OUT;
+
+'''
+}
+
+
+process make_report_pipeline_presto_render_rmarkdown {
+
+input:
+ file rmk from g61_2_rMarkdown0_g61_10
+ file log_file from g61_0_logFile0_g61_10
+
+output:
+ file "*.html" optional true  into g61_10_outputFileHTML00
+ file "*csv" optional true  into g61_10_csvFile11
+
+"""
+
+#!/usr/bin/env Rscript 
+
+rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
+
+"""
+}
+
+
 process Assemble_pairs_reference_assemble_pairs {
 
 input:
@@ -1539,6 +1654,49 @@ if(mate=="pair"){
 	echo -e 'AssemblePairs works only on pair-end reads.'
 	"""
 }
+
+}
+
+
+process combine_fasta_p11 {
+
+input:
+ set val(name),file(reads1) from g28_12_reads0_g_84
+ set val(name),file(reads2) from g73_12_reads0_g_84
+
+output:
+ set val(name),file("R1.f*")  into g_84_fastaFile0_g_72
+
+"""
+#shell example: 
+
+#!/bin/sh 
+
+cat ${reads1} ${reads2} > R1.fasta
+"""
+}
+
+
+process split_constant {
+
+publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /light\/.*.fasta$/) "reads/$filename"}
+publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /heavy\/.*.fasta$/) "reads/$filename"}
+input:
+ set val(name),file(reads) from g_84_fastaFile0_g_72
+
+output:
+ set name, file("light/*.fasta") optional true  into g_72_fastaFile00
+ set name, file("heavy/*.fasta") optional true  into g_72_fastaFile11
+
+script:
+split_col = params.split_constant.split_col
+
+"""
+#!/bin/sh 
+mkdir heavy
+mkdir light
+awk '/^>/{f=""; split(\$0,b,"${split_col}="); if(substr(b[2],1,3)=="IGK"){f="light/${name}_IGK.fasta"} else {if(substr(b[2],1,3)=="IGL"){f="light/${name}_IGL.fasta"} else {f="heavy/${name}.fasta"}}; print \$0 > f ; next } {print \$0 > f} ' ${reads}
+"""
 
 }
 
@@ -1699,164 +1857,6 @@ input:
 output:
  file "*.html" optional true  into g73_25_outputFileHTML00
  file "*csv" optional true  into g73_25_csvFile11
-
-"""
-
-#!/usr/bin/env Rscript 
-
-rmarkdown::render("${rmk}", clean=TRUE, output_format="html_document", output_dir=".")
-
-"""
-}
-
-
-process combine_fasta_p11 {
-
-input:
- set val(name),file(reads1) from g28_12_reads0_g_84
- set val(name),file(reads2) from g73_12_reads0_g_84
-
-output:
- set val(name),file("R1.f*")  into g_84_fastaFile0_g_72
-
-"""
-#shell example: 
-
-#!/bin/sh 
-
-cat ${reads1} ${reads2} > R1.fasta
-"""
-}
-
-
-process split_constant {
-
-publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /light\/.*.fasta$/) "reads/$filename"}
-publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /heavy\/.*.fasta$/) "reads/$filename"}
-input:
- set val(name),file(reads) from g_84_fastaFile0_g_72
-
-output:
- set name, file("light/*.fasta") optional true  into g_72_fastaFile00
- set name, file("heavy/*.fasta") optional true  into g_72_fastaFile11
-
-script:
-split_col = params.split_constant.split_col
-
-"""
-#!/bin/sh 
-mkdir heavy
-mkdir light
-awk '/^>/{f=""; split(\$0,b,"${split_col}="); if(substr(b[2],1,3)=="IGK"){f="light/${name}_IGK.fasta"} else {if(substr(b[2],1,3)=="IGL"){f="light/${name}_IGL.fasta"} else {f="heavy/${name}.fasta"}}; print \$0 > f ; next } {print \$0 > f} ' ${reads}
-"""
-
-}
-
-
-process make_report_pipeline_cat_all_file {
-
-input:
- set val(name), file(log_file) from g52_0_logFile3_g61_0
- set val(name), file(log_file) from g38_11_logFile3_g61_0
-
-output:
- set val(name), file("all_out_file.log")  into g61_0_logFile0_g61_2, g61_0_logFile0_g61_10
-
-script:
-readArray = log_file.toString()
-
-"""
-
-echo $readArray
-cat out* >> all_out_file.log
-"""
-
-}
-
-
-process make_report_pipeline_report_pipeline {
-
-input:
- set val(name), file(log_files) from g61_0_logFile0_g61_2
-
-output:
- file "*.rmd"  into g61_2_rMarkdown0_g61_10
-
-
-shell:
-
-readArray = log_files.toString().split(' ')
-R1 = readArray[0]
-
-'''
-#!/usr/bin/env perl
-
-
-my $script = <<'EOF';
-
-
-```{r, message=FALSE, echo=FALSE, results="hide"}
-# Setup
-library(prestor)
-library(knitr)
-library(captioner)
-
-plot_titles <- c("Read 1", "Read 2")
-if (!exists("tables")) { tables <- captioner(prefix="Table") }
-if (!exists("figures")) { figures <- captioner(prefix="Figure") }
-tables("count", 
-       "The count of reads that passed and failed each processing step.")
-figures("steps", 
-        paste("The number of reads or read sets retained at each processing step. 
-               Shown as raw counts (top) and percentages of input from the previous 
-               step (bottom). Steps having more than one column display individual values for", 
-              plot_titles[1], "(first column) and", plot_titles[2], "(second column)."))
-```
-
-```{r, echo=FALSE}
-console_log <- loadConsoleLog(file.path(".","!{R1}"))
-```
-
-# Summary of Processing Steps
-
-```{r, echo=FALSE}
-count_df <- plotConsoleLog(console_log, sizing="figure")
-
-df<-count_df[,c("task", "pass", "fail")]
-
-write.csv(df,"pipeline_statistics.csv") 
-```
-
-`r figures("steps")`
-
-```{r, echo=FALSE}
-kable(count_df[c("step", "task", "total", "pass", "fail")],
-      col.names=c("Step", "Task", "Input", "Passed", "Failed"),
-      digits=3)
-```
-
-`r tables("count")`
-
-
-EOF
-	
-open OUT, ">pipeline_statistic_!{name}.rmd";
-print OUT $script;
-close OUT;
-
-'''
-}
-
-
-process make_report_pipeline_presto_render_rmarkdown {
-
-input:
- file rmk from g61_2_rMarkdown0_g61_10
- file log_file from g61_0_logFile0_g61_10
-
-output:
- file "*.html" optional true  into g61_10_outputFileHTML00
- file "*csv" optional true  into g61_10_csvFile11
 
 """
 
