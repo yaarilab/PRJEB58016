@@ -8,7 +8,7 @@ params.metadata.metadata = "${params.projectDir}/tools.json"
 if (!params.mate){params.mate = ""} 
 if (!params.reads){params.reads = ""} 
 
-Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_78;g_1_mate_g_79;g_1_mate_g_71;g_1_mate_g_85;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g80_14;g_1_mate_g82_9;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g28_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g73_12}
+Channel.value(params.mate).into{g_1_mate_g_63;g_1_mate_g_78;g_1_mate_g_71;g_1_mate_g_85;g_1_mate_g_79;g_1_mate_g38_11;g_1_mate_g38_9;g_1_mate_g38_12;g_1_mate_g80_14;g_1_mate_g82_9;g_1_mate_g28_15;g_1_mate_g28_19;g_1_mate_g28_12;g_1_mate_g73_15;g_1_mate_g73_19;g_1_mate_g73_12}
 if (params.reads){
 Channel
 	.fromFilePairs( params.reads , size: params.mate == "single" ? 1 : params.mate == "pair" ? 2 : params.mate == "triple" ? 3 : params.mate == "quadruple" ? 4 : -1 )
@@ -702,12 +702,20 @@ NR%4==1{
 }
 flag==1{
   if(NR%4==1){
-     print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "|PRCONS=" PRCONS[a[1]] "|PRFREQ=" PRFREQ[a[1]] "|BARCODE=" c[2]  > out1;
-     print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "|PRCONS=" PRCONS[a[1]] "|PRFREQ=" PRFREQ[a[1]] "|BARCODE=" c[2]  > out2;
-#    print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "," b[2] "|BARCODE=" c[2] "|BARCODE_COUNT=" BARCODE_COUNT[a[1]] "," d[2] > out1;
-#    print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "," b[2] "|BARCODE=" c[2] "|BARCODE_COUNT=" BARCODE_COUNT[a[1]] "," d[2] > out2;
-#     print a[1] "/1|SEQORIENT=" SEQORIENT[a[1]] "," c[2] "|PRIMER=" PRIMER[a[1]] "|" b[4] > out1;
-#     print a[1] "/2|SEQORIENT=" SEQORIENT[a[1]] "," c[2] "|PRIMER="  d[2] "|" b[4] > out2;
+  
+   split(c[2], isotypes, ",")
+   delete uniq_isotypes
+   for (i in isotypes) {
+        uniq_isotypes[isotypes[i]] = 1
+    }
+   collapsed_isotypes = ""
+   sep = ""
+   for (key in uniq_isotypes) {
+        collapsed_isotypes = collapsed_isotypes sep key
+        sep = ","
+   }
+   print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "|PRCONS=" PRCONS[a[1]] "|PRFREQ=" PRFREQ[a[1]] "|ISOTYPE=" collapsed_isotypes  > out1;
+   print a[1] "|CONSCOUNT=" CONSCOUNT[a[1]] "|PRCONS=" PRCONS[a[1]] "|PRFREQ=" PRFREQ[a[1]] "|ISOTYPE=" collapsed_isotypes  > out2;
     next;
   }
   if(NR%4==2){
