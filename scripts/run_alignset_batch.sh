@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Check if a file is provided
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <input_fastq_file> <batch_size>"
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <input_fastq_file> [batch_size]"
     exit 1
 fi
 
