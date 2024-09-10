@@ -56,11 +56,11 @@ process_batch() {
 monitor_progress() {
     while :; do
         log_count=$(ls -1 tmp_logs/ | wc -l)
-        progress=$(echo "scale=2; ($log_count*100/($umi_count/100))" | bc)
-        echo "Progress: $log_count/$(($umi_count/100)) batches processed ($progress%)"
+        progress=$(echo "scale=2; ($log_count*100/($umi_count/$batch_size))" | bc)
+        echo "Progress: $log_count/$(($umi_count/$batch_size)) batches processed ($progress%)"
         sleep 10
         # Exit if the process is complete
-        if [ "$log_count" -ge "$(echo $umi_count/100 | bc)" ]; then
+        if [ "$log_count" -ge "$(echo $umi_count/$batch_size | bc)" ]; then
             echo "All UMI batches processed!"
             break
         fi
