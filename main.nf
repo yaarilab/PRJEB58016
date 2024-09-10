@@ -1509,12 +1509,13 @@ if(mate=="pair"){
 
 process combine_fasta_p11 {
 
+publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /R1.f.*$/) "reads_before_split/$filename"}
 input:
  set val(name),file(reads1) from g28_12_reads0_g_84
  set val(name),file(reads2) from g73_12_reads0_g_84
 
 output:
- set val(name),file("R1.f*")  into g_84_fastaFile0_g_72
+ set val(name),file("R1.f*")  into g_84_fastaFile0_g_86
 
 """
 #shell example: 
@@ -1526,12 +1527,43 @@ cat ${reads1} ${reads2} > R1.fasta
 }
 
 
+process split_seq {
+
+input:
+ set val(name),file(reads) from g_84_fastaFile0_g_86
+
+output:
+ set val(name), file("*_atleast-*.fast*")  into g_86_fastaFile0_g_72
+ set val(name),file("out*") optional true  into g_86_logFile11
+
+script:
+field = params.split_seq.field
+num = params.split_seq.num
+fasta = params.split_seq.fasta
+
+readArray = reads.toString()
+
+if(num!=0){
+	num = " --num ${num}"
+}else{
+	num = ""
+}
+
+fasta = (fasta=="false") ? "" : "--fasta"
+
+"""
+SplitSeq.py group -s ${readArray} -f ${field} ${num} ${fasta} >> out_${readArray}_SS.log
+"""
+
+}
+
+
 process split_constant {
 
 publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /light\/.*.fasta$/) "reads/$filename"}
 publishDir params.outdir, mode: 'copy', saveAs: {filename -> if (filename =~ /heavy\/.*.fasta$/) "reads/$filename"}
 input:
- set val(name),file(reads) from g_84_fastaFile0_g_72
+ set val(name),file(reads) from g_86_fastaFile0_g_72
 
 output:
  set name, file("light/*.fasta") optional true  into g_72_fastaFile00
