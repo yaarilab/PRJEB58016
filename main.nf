@@ -410,6 +410,7 @@ div = params.align_sets.div
 failed = params.align_sets.failed
 nproc = params.align_sets.nproc
 alignset_script = params.align_sets.alignset_script
+alignset_script_batch_size = params.align_sets.alignset_script_batch_size
 muscle_exec = params.align_sets.muscle_exec
 muscle_version = params.align_sets.muscle_version
 offset_table = params.align_sets.offset_table
@@ -470,7 +471,7 @@ if(mate=="pair"){
 	#AlignSets.py ${method} -s ${R2} ${bf} \$muscle_exec_argv ${div_arg} ${reverse_arg} ${failed_arg} ${pf} ${offset_table_argv} ${mode} ${primer_file_argv} --log AS_R2_${name}.log --nproc ${nproc} | tee -a out_${R1}_AS.log
 	# adapt for P11
 	chmod +x ${alignset_script}
-	${alignset_script} ${R2}
+	${alignset_script} ${R2} ${alignset_script_batch_size}
 	"""
 	
 }else{

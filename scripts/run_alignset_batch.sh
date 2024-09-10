@@ -2,7 +2,7 @@
 
 # Check if a file is provided
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <input_fastq_file>"
+    echo "Usage: $0 <input_fastq_file> <batch_size>"
     exit 1
 fi
 
@@ -15,14 +15,14 @@ mkdir -p tmp_logs
 mkdir -p tmp_logs2
 mkdir -p tmp
 
-# Extract unique UMIs and group them into batches of 100
+# Extract unique UMIs and group them into batches of XX
 umis=$(grep '^@' $input_fastq | sed -n 's/.*UMI=\([A-Z]*-[0-9]\).*/\1/p' | sort | uniq)
 umi_count=$(echo "$umis" | wc -l)
 
 # Print the number of unique UMIs
 echo "Number of unique UMIs: $umi_count"
 
-# Function to process a batch of 100 UMIs in parallel
+# Function to process a batch of XX UMIs in parallel
 process_batch() {
     batch_umis=$1
     batch_id=$2
@@ -70,9 +70,9 @@ monitor_progress() {
 # Start monitoring progress in the background
 monitor_progress &
 
-# Split UMIs into batches of 100 and process each batch in parallel
+# Split UMIs into batches of XX and process each batch in parallel
 batch_id=0
-batch_size=100
+batch_size=${2:-100}
 batch_umis=""
 
 for umi in $umis; do
