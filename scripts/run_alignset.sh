@@ -80,7 +80,7 @@ wait
 wait
 
 echo "Concatenating all files into $output_fastq"
-cat tmp/\*.fastq > "$output_fastq"
+cat tmp/*.fastq > "$output_fastq"
 
 # Cleanup temporary files
 echo "Cleaning up temporary files"
